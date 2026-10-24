@@ -3,21 +3,22 @@ package cc.sighs.extremeevasion;
 import cc.sighs.extremeevasion.compat.roll.RollCompat;
 import cc.sighs.extremeevasion.event.ExtremeCounterAttackEvent;
 import cc.sighs.extremeevasion.event.ExtremeEvasionTriggeredEvent;
-import cc.sighs.extremeevasion.entity.EvasionEchoEntity;
 import cc.sighs.extremeevasion.network.ExtremeEvasionNetwork;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.CombatRules;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.ProjectileImpactEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
@@ -35,9 +36,14 @@ public final class ExtremeEvasionEvents {
     private static final String DATA_START_X = "extreme_window_start_x";
     private static final String DATA_START_Y = "extreme_window_start_y";
     private static final String DATA_START_Z = "extreme_window_start_z";
+    private static final String DATA_START_MIN_X = "extreme_window_start_min_x";
+    private static final String DATA_START_MIN_Y = "extreme_window_start_min_y";
+    private static final String DATA_START_MIN_Z = "extreme_window_start_min_z";
+    private static final String DATA_START_MAX_X = "extreme_window_start_max_x";
+    private static final String DATA_START_MAX_Y = "extreme_window_start_max_y";
+    private static final String DATA_START_MAX_Z = "extreme_window_start_max_z";
     private static final String DATA_MIN_END_TICK = "extreme_window_min_end_tick";
     private static final String DATA_MAX_END_TICK = "extreme_window_max_end_tick";
-    private static final String DATA_ECHO_UUID = "extreme_window_echo_uuid";
     private static final String DATA_ROLL_CONSUMED = "extreme_roll_consumed";
     private static final String DATA_COUNTER_ATTACK_END_TICK = "extreme_counter_attack_end_tick";
     private static final String DATA_COUNTER_ATTACK_ACTIVE = "extreme_counter_attack_active";
@@ -45,9 +51,6 @@ public final class ExtremeEvasionEvents {
     private static final String DATA_COUNTER_ATTACK_TARGET_UUID = "extreme_counter_attack_target_uuid";
     private static final String DATA_COUNTER_ATTACK_CHARGES = "extreme_counter_attack_charges";
     private static final String DATA_BULLET_TIME_INVULNERABLE_UNTIL = "bullet_time_invulnerable_until";
-
-    private ExtremeEvasionEvents() {
-    }
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -58,7 +61,7 @@ public final class ExtremeEvasionEvents {
         Player player = event.player;
         CompoundTag data = getData(player);
         boolean rolling = RollCompat.isRolling(player);
-        boolean active = data.getBoolean(DATA_ACTIVE);
+        boolean active;
         sanitizeLegacyState(player, data);
         active = data.getBoolean(DATA_ACTIVE);
         clearExpiredCounterAttack(player, data);
@@ -71,7 +74,7 @@ public final class ExtremeEvasionEvents {
 
         if (data.getBoolean(DATA_ROLL_CONSUMED)) {
             if (active) {
-                endWindow(player, data);
+                endWindow(data);
             }
             return;
         }
@@ -86,11 +89,11 @@ public final class ExtremeEvasionEvents {
         }
 
         if (!isExtremeEvasionWindowOpen(player, data) || data.getBoolean(DATA_SUCCESS)) {
-            endWindow(player, data);
+            endWindow(data);
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onLivingAttack(LivingAttackEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
@@ -107,7 +110,7 @@ public final class ExtremeEvasionEvents {
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onLivingHurt(LivingHurtEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
@@ -151,7 +154,7 @@ public final class ExtremeEvasionEvents {
         data.putBoolean(DATA_COUNTER_ATTACK_ACTIVE, true);
         data.putLong(DATA_COUNTER_ATTACK_ACTIVE_TICK, player.level().getGameTime());
         data.putUUID(DATA_COUNTER_ATTACK_TARGET_UUID, event.getTarget().getUUID());
-        consumeCounterAttack(serverPlayer, data);
+        consumeCounterAttack(data);
     }
 
     @SubscribeEvent
@@ -192,44 +195,62 @@ public final class ExtremeEvasionEvents {
         }
     }
 
+    @SubscribeEvent
+    public static void onProjectileImpact(ProjectileImpactEvent event) {
+        var rayTraceResult = event.getRayTraceResult();
+        if (!(rayTraceResult instanceof EntityHitResult entityHitResult)) return;
+
+        var entity = entityHitResult.getEntity();
+        if (!(entity instanceof Player player) || !hasActiveExtremeEvasionWindow(player)) return;
+
+        var projectile = event.getProjectile();
+        tryTriggerExtremeEvasion((ServerPlayer) player, projectile.damageSources().mobProjectile(projectile, null));
+    }
+
     private static boolean isMobMeleeAttack(net.minecraft.world.damagesource.DamageSource source) {
         return source.getEntity() instanceof Mob attacker
                 && (source.getDirectEntity() == null || source.getDirectEntity() == attacker);
     }
 
     private static void startWindow(Player player, CompoundTag data) {
-        if (!(player instanceof ServerPlayer serverPlayer)) {
+        if (!(player instanceof ServerPlayer)) {
             return;
         }
 
-        removeEcho(serverPlayer, data);
+        var aabb = player.getBoundingBox();
         data.putBoolean(DATA_ACTIVE, true);
         data.putBoolean(DATA_SUCCESS, false);
         data.putDouble(DATA_START_X, player.getX());
         data.putDouble(DATA_START_Y, player.getY());
         data.putDouble(DATA_START_Z, player.getZ());
+        data.putDouble(DATA_START_MIN_X, aabb.minX);
+        data.putDouble(DATA_START_MIN_Y, aabb.minY);
+        data.putDouble(DATA_START_MIN_Z, aabb.minZ);
+        data.putDouble(DATA_START_MAX_X, aabb.maxX);
+        data.putDouble(DATA_START_MAX_Y, aabb.maxY);
+        data.putDouble(DATA_START_MAX_Z, aabb.maxZ);
         data.putLong(DATA_MIN_END_TICK, player.level().getGameTime() + Config.minimumExtremeEvasionWindowTicks);
         data.putLong(DATA_MAX_END_TICK, player.level().getGameTime() + Config.maximumExtremeEvasionWindowTicks);
-        spawnEcho(serverPlayer, data);
     }
 
-    private static void endWindow(Player player, CompoundTag data) {
-        if (player instanceof ServerPlayer serverPlayer) {
-            removeEcho(serverPlayer, data);
-        }
+    private static void endWindow(CompoundTag data) {
         clearWindow(data);
     }
 
     private static void clearWindow(CompoundTag data) {
-        // The actual echo cleanup is handled before calling this helper.
         data.remove(DATA_ACTIVE);
         data.remove(DATA_SUCCESS);
         data.remove(DATA_START_X);
         data.remove(DATA_START_Y);
         data.remove(DATA_START_Z);
+        data.remove(DATA_START_MIN_X);
+        data.remove(DATA_START_MIN_Y);
+        data.remove(DATA_START_MIN_Z);
+        data.remove(DATA_START_MAX_X);
+        data.remove(DATA_START_MAX_Y);
+        data.remove(DATA_START_MAX_Z);
         data.remove(DATA_MIN_END_TICK);
         data.remove(DATA_MAX_END_TICK);
-        data.remove(DATA_ECHO_UUID);
     }
 
     private static CompoundTag getData(Player player) {
@@ -268,6 +289,18 @@ public final class ExtremeEvasionEvents {
         );
     }
 
+    public static AABB getExtremeEvasionStartAABB(Player player) {
+        CompoundTag data = getData(player);
+        return new AABB(
+                data.getDouble(DATA_START_MIN_X),
+                data.getDouble(DATA_START_MIN_Y),
+                data.getDouble(DATA_START_MIN_Z),
+                data.getDouble(DATA_START_MAX_X),
+                data.getDouble(DATA_START_MAX_Y),
+                data.getDouble(DATA_START_MAX_Z)
+        );
+    }
+
     public static boolean tryTriggerExtremeEvasion(ServerPlayer player, DamageSource damageSource) {
         CompoundTag data = getData(player);
         if (!isWindowArmed(data) || !isExtremeEvasionWindowOpen(player, data)) {
@@ -280,7 +313,6 @@ public final class ExtremeEvasionEvents {
             return false;
         }
 
-        removeEcho(player, data);
         clearWindow(data);
         data.putBoolean(DATA_ROLL_CONSUMED, true);
         grantCounterAttack(player, data);
@@ -350,9 +382,6 @@ public final class ExtremeEvasionEvents {
                 && (!data.contains(DATA_MIN_END_TICK)
                 || !data.contains(DATA_MAX_END_TICK)
                 || !isExtremeEvasionWindowOpen(player, data))) {
-            if (player instanceof ServerPlayer serverPlayer) {
-                removeEcho(serverPlayer, data);
-            }
             clearWindow(data);
         }
 
@@ -428,7 +457,7 @@ public final class ExtremeEvasionEvents {
         }
     }
 
-    private static void consumeCounterAttack(ServerPlayer player, CompoundTag data) {
+    private static void consumeCounterAttack(CompoundTag data) {
         int remainingCharges = data.getInt(DATA_COUNTER_ATTACK_CHARGES) - 1;
         if (remainingCharges <= 0) {
             data.remove(DATA_COUNTER_ATTACK_END_TICK);
@@ -466,6 +495,10 @@ public final class ExtremeEvasionEvents {
             return desiredAfterArmor;
         }
 
+        return getHigh(desiredAfterArmor, armor, toughness);
+    }
+
+    private static float getHigh(float desiredAfterArmor, float armor, float toughness) {
         float low = desiredAfterArmor;
         float high = desiredAfterArmor;
         while (CombatRules.getDamageAfterAbsorb(high, armor, toughness) < desiredAfterArmor && high < desiredAfterArmor * 100.0F) {
@@ -481,34 +514,5 @@ public final class ExtremeEvasionEvents {
             }
         }
         return high;
-    }
-
-    private static void spawnEcho(ServerPlayer player, CompoundTag data) {
-        if (!(player.level() instanceof ServerLevel serverLevel)) {
-            return;
-        }
-
-        EvasionEchoEntity echo = ExtremeEvasion.EVASION_ECHO.get().create(serverLevel);
-        if (echo == null) {
-            return;
-        }
-
-        echo.setOwner(player);
-        echo.moveTo(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
-        echo.setYBodyRot(player.getYRot());
-        echo.setYHeadRot(player.getYRot());
-        serverLevel.addFreshEntity(echo);
-        data.putUUID(DATA_ECHO_UUID, echo.getUUID());
-    }
-
-    private static void removeEcho(ServerPlayer player, CompoundTag data) {
-        if (!data.hasUUID(DATA_ECHO_UUID) || !(player.level() instanceof ServerLevel serverLevel)) {
-            return;
-        }
-
-        if (serverLevel.getEntity(data.getUUID(DATA_ECHO_UUID)) instanceof EvasionEchoEntity echo) {
-            echo.discard();
-        }
-        data.remove(DATA_ECHO_UUID);
     }
 }

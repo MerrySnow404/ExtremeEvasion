@@ -1,9 +1,13 @@
 package cc.sighs.extremeevasion;
 
+import cc.sighs.extremeevasion.handler.EchoHandler;
+
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
+
+import java.util.List;
 
 @Mod.EventBusSubscriber(modid = ExtremeEvasion.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class Config {
@@ -121,7 +125,19 @@ public final class Config {
                     "是否播放子弹时间触发音效。"
             )
             .define("enableBulletTimeTriggerSound", true);
+    private static final ForgeConfigSpec.BooleanValue ENABLE_TRAJECTORY_AABB_DEBUG_RENDERING = BUILDER
+            .comment(
+                    "Whether to render the extreme evasion trajectory AABBs for debugging.",
+                    "是否绘制极限闪避的轨迹碰撞盒调试线框。"
+            )
+            .define("enableTrajectoryAabbDebugRendering", false);
 
+    private static final ForgeConfigSpec.ConfigValue<List<? extends String>> EXTREME_EVASION_ENTITY_BLACKLIST = BUILDER
+            .comment(
+                    "Entity type ids or tags excluded from extreme evasion trajectory collision checks. Prefix tags with #.",
+                    "不参与极限闪避轨迹碰撞检测的实体类型 ID 或标签；标签请以 # 开头。"
+            )
+            .defineList("extremeEvasionEntityBlacklist", List.of("minecraft:player"), value -> value instanceof String);
     private static final ForgeConfigSpec.DoubleValue BULLET_TIME_TRIGGER_SOUND_VOLUME = BUILDER
             .comment(
                     "Volume of the bullet-time trigger sound.",
@@ -154,6 +170,8 @@ public final class Config {
     public static int bulletTimeVisualFadeMillis;
     public static boolean enableBulletTimeScreenShader;
     public static boolean enableBulletTimeTriggerSound;
+    public static boolean enableTrajectoryAabbDebugRendering;
+    public static List<? extends String> extremeEvasionEntityBlacklist;
     public static float bulletTimeTriggerSoundVolume;
     public static float bulletTimeTriggerSoundPitch;
 
@@ -181,6 +199,9 @@ public final class Config {
         bulletTimeVisualFadeMillis = BULLET_TIME_VISUAL_FADE_MILLIS.get();
         enableBulletTimeScreenShader = ENABLE_BULLET_TIME_SCREEN_SHADER.get();
         enableBulletTimeTriggerSound = ENABLE_BULLET_TIME_TRIGGER_SOUND.get();
+        enableTrajectoryAabbDebugRendering = ENABLE_TRAJECTORY_AABB_DEBUG_RENDERING.get();
+        extremeEvasionEntityBlacklist = EXTREME_EVASION_ENTITY_BLACKLIST.get();
+        EchoHandler.reloadEntityTypeBlacklist(extremeEvasionEntityBlacklist);
         bulletTimeTriggerSoundVolume = BULLET_TIME_TRIGGER_SOUND_VOLUME.get().floatValue();
         bulletTimeTriggerSoundPitch = BULLET_TIME_TRIGGER_SOUND_PITCH.get().floatValue();
     }

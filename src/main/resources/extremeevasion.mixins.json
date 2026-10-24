@@ -5,9 +5,10 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "extremeevasion.refmap.json",
   "mixins": [
+    "EntityMixin",
     "EpicFightDodgeSkillMixin",
-    "MeleeAttackGoalMixin",
     "PlayerAttackStrengthMixin",
+    "ServerLevelMixin",
     "UtilMixin"
   ],
   "client": [
