@@ -3,9 +3,11 @@ package cc.sighs.extremeevasion;
 import cc.sighs.extremeevasion.compat.roll.RollCompat;
 import cc.sighs.extremeevasion.event.ExtremeCounterAttackEvent;
 import cc.sighs.extremeevasion.event.ExtremeEvasionTriggeredEvent;
+import cc.sighs.extremeevasion.handler.TaCZHandler;
 import cc.sighs.extremeevasion.network.ExtremeEvasionNetwork;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.CombatRules;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -15,7 +17,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.ProjectileImpactEvent;
@@ -25,17 +26,14 @@ import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.CriticalHitEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = ExtremeEvasion.MODID)
 public final class ExtremeEvasionEvents {
-
     private static final String DATA_ROOT = ExtremeEvasion.MODID;
     private static final String DATA_ACTIVE = "extreme_window_active";
     private static final String DATA_SUCCESS = "extreme_window_success";
-    private static final String DATA_START_X = "extreme_window_start_x";
-    private static final String DATA_START_Y = "extreme_window_start_y";
-    private static final String DATA_START_Z = "extreme_window_start_z";
     private static final String DATA_START_MIN_X = "extreme_window_start_min_x";
     private static final String DATA_START_MIN_Y = "extreme_window_start_min_y";
     private static final String DATA_START_MIN_Z = "extreme_window_start_min_z";
@@ -100,7 +98,7 @@ public final class ExtremeEvasionEvents {
         }
 
         sanitizeLegacyState(player, getData(player));
-        if (hasActiveExtremeEvasionWindow(player) && isMobMeleeAttack(event.getSource()) && tryTriggerExtremeEvasion(player, event.getSource())) {
+        if (hasActiveExtremeEvasionWindow(player) && isTriggerableSource(event.getSource()) && tryTriggerExtremeEvasion(player, event.getSource())) {
             event.setCanceled(true);
             return;
         }
@@ -117,7 +115,7 @@ public final class ExtremeEvasionEvents {
         }
 
         sanitizeLegacyState(player, getData(player));
-        if (hasActiveExtremeEvasionWindow(player) && isMobMeleeAttack(event.getSource()) && tryTriggerExtremeEvasion(player, event.getSource())) {
+        if (hasActiveExtremeEvasionWindow(player) && isTriggerableSource(event.getSource()) && tryTriggerExtremeEvasion(player, event.getSource())) {
             event.setAmount(0.0F);
             event.setCanceled(true);
             return;
@@ -127,6 +125,18 @@ public final class ExtremeEvasionEvents {
             event.setAmount(0.0F);
             event.setCanceled(true);
         }
+    }
+
+    @SubscribeEvent
+    public static void onProjectileImpact(ProjectileImpactEvent event) {
+        var rayTraceResult = event.getRayTraceResult();
+        if (!(rayTraceResult instanceof EntityHitResult entityHitResult)) return;
+
+        var entity = entityHitResult.getEntity();
+        if (!(entity instanceof Player player) || !hasActiveExtremeEvasionWindow(player)) return;
+
+        var projectile = event.getProjectile();
+        tryTriggerExtremeEvasion((ServerPlayer) player, projectile.damageSources().mobProjectile(projectile, null));
     }
 
     @SubscribeEvent
@@ -195,21 +205,21 @@ public final class ExtremeEvasionEvents {
         }
     }
 
-    @SubscribeEvent
-    public static void onProjectileImpact(ProjectileImpactEvent event) {
-        var rayTraceResult = event.getRayTraceResult();
-        if (!(rayTraceResult instanceof EntityHitResult entityHitResult)) return;
-
-        var entity = entityHitResult.getEntity();
-        if (!(entity instanceof Player player) || !hasActiveExtremeEvasionWindow(player)) return;
-
-        var projectile = event.getProjectile();
-        tryTriggerExtremeEvasion((ServerPlayer) player, projectile.damageSources().mobProjectile(projectile, null));
+    private static boolean isTriggerableSource(DamageSource source) {
+        return isMobMeleeAttack(source) || isProjectileAttack(source) || isBulletAttack(source);
     }
 
-    private static boolean isMobMeleeAttack(net.minecraft.world.damagesource.DamageSource source) {
+    private static boolean isMobMeleeAttack(DamageSource source) {
         return source.getEntity() instanceof Mob attacker
                 && (source.getDirectEntity() == null || source.getDirectEntity() == attacker);
+    }
+
+    private static boolean isProjectileAttack(DamageSource source) {
+        return source.is(DamageTypeTags.IS_PROJECTILE);
+    }
+
+    private static boolean isBulletAttack(DamageSource source) {
+        return ModList.get().isLoaded("tacz") && source.is(TaCZHandler.BULLETS_TAG);
     }
 
     private static void startWindow(Player player, CompoundTag data) {
@@ -220,9 +230,6 @@ public final class ExtremeEvasionEvents {
         var aabb = player.getBoundingBox();
         data.putBoolean(DATA_ACTIVE, true);
         data.putBoolean(DATA_SUCCESS, false);
-        data.putDouble(DATA_START_X, player.getX());
-        data.putDouble(DATA_START_Y, player.getY());
-        data.putDouble(DATA_START_Z, player.getZ());
         data.putDouble(DATA_START_MIN_X, aabb.minX);
         data.putDouble(DATA_START_MIN_Y, aabb.minY);
         data.putDouble(DATA_START_MIN_Z, aabb.minZ);
@@ -240,9 +247,6 @@ public final class ExtremeEvasionEvents {
     private static void clearWindow(CompoundTag data) {
         data.remove(DATA_ACTIVE);
         data.remove(DATA_SUCCESS);
-        data.remove(DATA_START_X);
-        data.remove(DATA_START_Y);
-        data.remove(DATA_START_Z);
         data.remove(DATA_START_MIN_X);
         data.remove(DATA_START_MIN_Y);
         data.remove(DATA_START_MIN_Z);
@@ -278,15 +282,6 @@ public final class ExtremeEvasionEvents {
         }
 
         startWindow(player, data);
-    }
-
-    public static Vec3 getExtremeEvasionStartPos(Player player) {
-        CompoundTag data = getData(player);
-        return new Vec3(
-                data.getDouble(DATA_START_X),
-                data.getDouble(DATA_START_Y),
-                data.getDouble(DATA_START_Z)
-        );
     }
 
     public static AABB getExtremeEvasionStartAABB(Player player) {

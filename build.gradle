@@ -189,6 +189,8 @@ dependencies {
 
     // Optional integration: the mod continues to work without TimeScaleLib installed.
     implementation fg.deobf("curse.maven:timescalelib-1542930:8670577")
+
+    implementation fg.deobf("curse.maven:timeless-and-classics-zero-1028108:9037989")
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
