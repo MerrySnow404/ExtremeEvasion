@@ -5,18 +5,12 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.HashSet;
 import java.util.List;
 
 public class EchoHandler {
-    /**
-     * Players whose evasion boxes may be queried during the current level tick.
-     */
-    public static final HashSet<Player> ACTIVE_PLAYERS = new HashSet<>();
     /**
      * Entity types and tags excluded from trajectory collision checks.
      */
@@ -27,27 +21,12 @@ public class EchoHandler {
     public static final ThreadLocal<Boolean> modifiesBoundingBoxAndPos = ThreadLocal.withInitial(() -> false);
     public static Entity currentEntity;
 
-    public static void prepareLevelTick(Level level) {
-        ACTIVE_PLAYERS.clear();
-        if (level.isClientSide()) {
-            return;
-        }
-
-        for (Player player : level.players()) {
-            if (ExtremeEvasionEvents.hasActiveExtremeEvasionWindow(player)) {
-                ACTIVE_PLAYERS.add(player);
-            }
-        }
-    }
-
     public static boolean shouldModifyFor(Entity entity) {
-        return !ENTITY_TYPE_BLACKLIST.is(entity.getType().builtInRegistryHolder())
-                && !ACTIVE_PLAYERS.isEmpty();
+        return !ENTITY_TYPE_BLACKLIST.is(entity.getType().builtInRegistryHolder());
     }
 
     public static boolean shouldModifyBoundingBox(Object object) {
-        return EchoHandler.modifiesBoundingBoxAndPos.get()
-                && EchoHandler.ACTIVE_PLAYERS.contains(object);
+        return EchoHandler.modifiesBoundingBoxAndPos.get() && object instanceof Player player && ExtremeEvasionEvents.hasActiveExtremeEvasionWindow(player);
     }
 
     public static Vec3 getEvasionPosition(Player player, Vec3 original) {
@@ -76,7 +55,7 @@ public class EchoHandler {
     public static boolean shouldModifyPosition(Player player) {
         return EchoHandler.modifiesBoundingBoxAndPos.get()
                 && EchoHandler.currentEntity != null
-                && EchoHandler.ACTIVE_PLAYERS.contains(player);
+                && ExtremeEvasionEvents.hasActiveExtremeEvasionWindow(player);
     }
 
     public static void reloadEntityTypeBlacklist(List<? extends String> entries) {
