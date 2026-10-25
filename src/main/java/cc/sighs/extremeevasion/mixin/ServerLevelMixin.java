@@ -8,15 +8,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.function.BooleanSupplier;
-
 @Mixin(ServerLevel.class)
 public abstract class ServerLevelMixin {
-    @Inject(method = "tick", at = @At("HEAD"))
-    private void extremeevasion$prepare(BooleanSupplier hasTimeLeft, CallbackInfo callback) {
-        EchoHandler.prepareLevelTick((ServerLevel) (Object) this);
-    }
-
     @Inject(method = "tickNonPassenger", at = @At("HEAD"))
     private void extremeevasion$begin(Entity entity, CallbackInfo callback) {
         EchoHandler.currentEntity = entity;
