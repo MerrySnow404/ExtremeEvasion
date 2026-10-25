@@ -55,7 +55,6 @@ public class ExtremeEvasion {
     // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents {
-
         @SubscribeEvent
         public static void registerShaders(RegisterShadersEvent event) throws IOException {
             event.registerShader(
