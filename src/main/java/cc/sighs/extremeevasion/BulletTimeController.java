@@ -3,7 +3,6 @@ package cc.sighs.extremeevasion;
 import net.minecraft.Util;
 
 public final class BulletTimeController {
-
     private static final double NORMAL_SPEED = 1.0D;
 
     private static long lastRealMillis = monotonicMillis();
@@ -11,9 +10,6 @@ public final class BulletTimeController {
     private static double speed = NORMAL_SPEED;
     private static long bulletTimeEndRealMillis;
     private static boolean initialized;
-
-    private BulletTimeController() {
-    }
 
     public static synchronized boolean shouldOverrideMillis() {
         return initialized;
@@ -42,7 +38,9 @@ public final class BulletTimeController {
         return false;
     }
 
-    /** Starts the legacy global clock even when the local mode config prefers TimeScaleLib. */
+    /**
+     * Starts the legacy global clock even when the local mode config prefers TimeScaleLib.
+     */
     public static synchronized void triggerGlobal() {
         if (!Config.enableBulletTime || Config.bulletTimeDurationMillis <= 0) {
             return;

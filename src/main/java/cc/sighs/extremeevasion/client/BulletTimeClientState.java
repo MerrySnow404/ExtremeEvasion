@@ -3,12 +3,8 @@ package cc.sighs.extremeevasion.client;
 import cc.sighs.extremeevasion.Config;
 
 public final class BulletTimeClientState {
-
     private static long startNanos;
     private static long durationNanos;
-
-    private BulletTimeClientState() {
-    }
 
     public static void start(long durationMillis) {
         startNanos = System.nanoTime();
@@ -30,7 +26,7 @@ public final class BulletTimeClientState {
         double fadeMillis = Math.min(Config.bulletTimeVisualFadeMillis, durationMillis * 0.5D);
         double fadeIn = fadeMillis <= 0.0D ? 1.0D : elapsedMillis / fadeMillis;
         double fadeOut = fadeMillis <= 0.0D ? 1.0D : (durationMillis - elapsedMillis) / fadeMillis;
-        double linear = Math.max(0.0D, Math.min(1.0D, Math.min(fadeIn, fadeOut)));
+        double linear = Math.clamp(Math.min(fadeIn, fadeOut), 0.0D, 1.0D);
         return (float) (linear * linear * (3.0D - 2.0D * linear));
     }
 

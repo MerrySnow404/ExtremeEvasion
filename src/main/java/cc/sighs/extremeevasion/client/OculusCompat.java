@@ -3,7 +3,6 @@ package cc.sighs.extremeevasion.client;
 import java.lang.reflect.Method;
 
 public final class OculusCompat {
-
     private static Method getInstanceMethod;
     private static Method isShaderPackInUseMethod;
     private static Object handRendererInstance;
@@ -11,9 +10,6 @@ public final class OculusCompat {
     private static Method readyUpHandBufferMethod;
     private static Method endBatchHandBufferMethod;
     private static boolean initialized;
-
-    private OculusCompat() {
-    }
 
     public static boolean isShaderPackInUse() {
         tryInitialize();

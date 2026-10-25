@@ -8,13 +8,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 
 public final class BulletTimeSoundPlayer {
-
     private static final SoundEvent TRIGGER_SOUND = SoundEvent.createVariableRangeEvent(
             ResourceLocation.fromNamespaceAndPath(ExtremeEvasion.MODID, "bullet_time_trigger")
     );
-
-    private BulletTimeSoundPlayer() {
-    }
 
     public static void playTrigger() {
         if (!Config.enableBulletTimeTriggerSound || Config.bulletTimeTriggerSoundVolume <= 0.0F) {

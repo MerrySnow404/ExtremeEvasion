@@ -3,18 +3,15 @@ package cc.sighs.extremeevasion.compat.roll;
 import com.mojang.logging.LogUtils;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.fml.ModList;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.slf4j.Logger;
 
 public final class RollCompat {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final List<RollProvider> PROVIDERS = new ArrayList<>();
     private static boolean initialized;
-
-    private RollCompat() {
-    }
 
     public static void init() {
         if (initialized) {

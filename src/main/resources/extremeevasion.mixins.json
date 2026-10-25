@@ -4,8 +4,9 @@
   "package": "cc.sighs.extremeevasion.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "MeleeAttackGoalMixin",
+    "EntityMixin",
     "PlayerAttackStrengthMixin",
+    "ServerLevelMixin",
     "UtilMixin"
   ],
   "client": [

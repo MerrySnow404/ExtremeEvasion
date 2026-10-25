@@ -6,7 +6,6 @@ import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.ICancellableEvent;
 
 public class ExtremeEvasionTriggeredEvent extends Event implements ICancellableEvent {
-
     private final ServerPlayer player;
     private final DamageSource damageSource;
     private final boolean bulletTimeTriggered;

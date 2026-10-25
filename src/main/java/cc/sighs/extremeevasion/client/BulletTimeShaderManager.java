@@ -3,7 +3,6 @@ package cc.sighs.extremeevasion.client;
 import cc.sighs.extremeevasion.Config;
 import cc.sighs.extremeevasion.ExtremeEvasion;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.EffectInstance;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
@@ -13,7 +12,6 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import java.io.IOException;
 
 public final class BulletTimeShaderManager {
-
     private static final String EFFECT_NAME = ExtremeEvasion.MODID + ":bullet_time";
     private static final Minecraft MC = Minecraft.getInstance();
 
@@ -21,9 +19,6 @@ public final class BulletTimeShaderManager {
     private static boolean needsResize = true;
     private static int lastWindowWidth = -1;
     private static int lastWindowHeight = -1;
-
-    private BulletTimeShaderManager() {
-    }
 
     public static void ensureLoaded() {
         if (postChain != null) {

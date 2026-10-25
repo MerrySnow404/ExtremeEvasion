@@ -1,16 +1,10 @@
 package cc.sighs.extremeevasion.client;
 
-import cc.sighs.extremeevasion.Config;
-
 public final class CounterAttackClientState {
-
     private static boolean active;
     private static long transitionStartNanos;
     private static float transitionStartIntensity;
     private static float targetIntensity;
-
-    private CounterAttackClientState() {
-    }
 
     public static boolean isActive() {
         return active;
