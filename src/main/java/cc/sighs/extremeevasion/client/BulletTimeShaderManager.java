@@ -18,7 +18,6 @@ import java.io.IOException;
 
 @Mod.EventBusSubscriber(modid = ExtremeEvasion.MODID, value = Dist.CLIENT)
 public final class BulletTimeShaderManager {
-
     private static final String EFFECT_NAME = ExtremeEvasion.MODID + ":bullet_time";
     private static final Minecraft MC = Minecraft.getInstance();
 
@@ -26,9 +25,6 @@ public final class BulletTimeShaderManager {
     private static boolean needsResize = true;
     private static int lastWindowWidth = -1;
     private static int lastWindowHeight = -1;
-
-    private BulletTimeShaderManager() {
-    }
 
     public static void ensureLoaded() {
         if (postChain != null) {

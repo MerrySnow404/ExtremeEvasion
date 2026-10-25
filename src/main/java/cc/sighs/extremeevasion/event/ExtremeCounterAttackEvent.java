@@ -7,7 +7,6 @@ import net.minecraftforge.eventbus.api.Event;
 
 @Cancelable
 public class ExtremeCounterAttackEvent extends Event {
-
     private final ServerPlayer player;
     private final Entity target;
     private final int remainingChargesBeforeConsume;

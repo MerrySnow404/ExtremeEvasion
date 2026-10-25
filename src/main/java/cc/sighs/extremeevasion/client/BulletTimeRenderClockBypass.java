@@ -9,9 +9,6 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = ExtremeEvasion.MODID, value = Dist.CLIENT)
 public final class BulletTimeRenderClockBypass {
-    private BulletTimeRenderClockBypass() {
-    }
-
     @SubscribeEvent
     public static void onRenderTick(TickEvent.RenderTickEvent event) {
         BulletTimeClock.setBypassBulletTime(event.phase == TickEvent.Phase.START);

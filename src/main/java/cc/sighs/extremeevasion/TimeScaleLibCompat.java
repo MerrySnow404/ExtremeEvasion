@@ -7,17 +7,15 @@ import org.slf4j.Logger;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-/** Optional bridge for TimeScaleLib; this class remains usable when the library is absent. */
+/**
+ * Optional bridge for TimeScaleLib; this class remains usable when the library is absent.
+ */
 public final class TimeScaleLibCompat {
-
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String MOD_ID = "timescalelib";
     private static final String HANDLER_CLASS = "com.xm666.timescalelib.handler.TimeScaleHandler";
     private static Method applyScaleMethod;
     private static boolean lookupFailed;
-
-    private TimeScaleLibCompat() {
-    }
 
     public static boolean isLoaded() {
         return ModList.get().isLoaded(MOD_ID);

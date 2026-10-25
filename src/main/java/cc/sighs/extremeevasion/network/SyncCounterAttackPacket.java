@@ -9,7 +9,6 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public record SyncCounterAttackPacket(boolean active) {
-
     static void encode(SyncCounterAttackPacket packet, FriendlyByteBuf buffer) {
         buffer.writeBoolean(packet.active);
     }

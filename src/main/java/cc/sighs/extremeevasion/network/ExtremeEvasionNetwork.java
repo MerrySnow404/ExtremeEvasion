@@ -9,7 +9,6 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public final class ExtremeEvasionNetwork {
-
     private static final String PROTOCOL_VERSION = "1";
     private static int nextPacketId;
 
@@ -19,9 +18,6 @@ public final class ExtremeEvasionNetwork {
             PROTOCOL_VERSION::equals,
             PROTOCOL_VERSION::equals
     );
-
-    private ExtremeEvasionNetwork() {
-    }
 
     public static void register() {
         CHANNEL.messageBuilder(SyncCounterAttackPacket.class, nextPacketId++, NetworkDirection.PLAY_TO_CLIENT)

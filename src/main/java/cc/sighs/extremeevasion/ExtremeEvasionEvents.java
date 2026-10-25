@@ -92,37 +92,24 @@ public final class ExtremeEvasionEvents {
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void onLivingAttack(LivingAttackEvent event) {
+    public static void onLivingPreAttack(LivingAttackEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
 
         sanitizeLegacyState(player, getData(player));
-        if (hasActiveExtremeEvasionWindow(player) && isTriggerableSource(event.getSource()) && tryTriggerExtremeEvasion(player, event.getSource())) {
-            event.setCanceled(true);
-            return;
-        }
-
-        if (isBulletTimeInvulnerable(player)) {
-            event.setCanceled(true);
+        if (hasActiveExtremeEvasionWindow(player) && isTriggerableSource(event.getSource())) {
+            tryTriggerExtremeEvasion(player, event.getSource());
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void onLivingHurt(LivingHurtEvent event) {
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onLivingPostAttack(LivingAttackEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
 
-        sanitizeLegacyState(player, getData(player));
-        if (hasActiveExtremeEvasionWindow(player) && isTriggerableSource(event.getSource()) && tryTriggerExtremeEvasion(player, event.getSource())) {
-            event.setAmount(0.0F);
-            event.setCanceled(true);
-            return;
-        }
-
         if (isBulletTimeInvulnerable(player)) {
-            event.setAmount(0.0F);
             event.setCanceled(true);
         }
     }

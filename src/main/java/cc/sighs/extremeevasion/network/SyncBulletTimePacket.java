@@ -10,7 +10,6 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public record SyncBulletTimePacket(long durationMillis, boolean globalClock) {
-
     public SyncBulletTimePacket(long durationMillis) {
         this(durationMillis, false);
     }

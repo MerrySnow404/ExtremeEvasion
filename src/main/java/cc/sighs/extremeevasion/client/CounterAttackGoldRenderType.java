@@ -8,7 +8,6 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 
 public final class CounterAttackGoldRenderType extends RenderType {
-
     private static ShaderInstance goldOverlayShader;
     private static ShaderInstance goldHaloShader;
 
@@ -32,22 +31,22 @@ public final class CounterAttackGoldRenderType extends RenderType {
 
     private static RenderType createGoldRenderType(String name, RenderStateShard.ShaderStateShard shader) {
         return RenderType.create(
-            name,
-            DefaultVertexFormat.NEW_ENTITY,
-            VertexFormat.Mode.QUADS,
-            256,
-            true,
-            true,
-            RenderType.CompositeState.builder()
-                    .setShaderState(shader)
-                    .setTextureState(new RenderStateShard.TextureStateShard(TextureAtlas.LOCATION_BLOCKS, false, false))
-                    .setTransparencyState(ADDITIVE_TRANSPARENCY)
-                    .setCullState(NO_CULL)
-                    .setDepthTestState(NO_DEPTH_TEST)
-                    .setLightmapState(LIGHTMAP)
-                    .setOverlayState(OVERLAY)
-                    .setWriteMaskState(COLOR_WRITE)
-                    .createCompositeState(false)
+                name,
+                DefaultVertexFormat.NEW_ENTITY,
+                VertexFormat.Mode.QUADS,
+                256,
+                true,
+                true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(shader)
+                        .setTextureState(new RenderStateShard.TextureStateShard(TextureAtlas.LOCATION_BLOCKS, false, false))
+                        .setTransparencyState(ADDITIVE_TRANSPARENCY)
+                        .setCullState(NO_CULL)
+                        .setDepthTestState(NO_DEPTH_TEST)
+                        .setLightmapState(LIGHTMAP)
+                        .setOverlayState(OVERLAY)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .createCompositeState(false)
         );
     }
 

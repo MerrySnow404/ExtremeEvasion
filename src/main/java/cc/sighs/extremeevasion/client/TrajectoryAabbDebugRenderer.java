@@ -26,7 +26,7 @@ public class TrajectoryAabbDebugRenderer {
         }
 
         Minecraft mc = Minecraft.getInstance();
-        var players = Minecraft.getInstance().getSingleplayerServer().getPlayerList().getPlayers();
+        var players = mc.getSingleplayerServer().getPlayerList().getPlayers();
         if (players.isEmpty()) return;
 
         Player player = players.get(0);
@@ -50,7 +50,12 @@ public class TrajectoryAabbDebugRenderer {
                 -cameraPos.z
         );
 
-        AABB currentBox = player.getBoundingBox();
+        var clientPlayer = mc.player;
+        var boundingBox = clientPlayer.getBoundingBox();
+        float partialTick = event.getPartialTick();
+        Vec3 interpolatedPosition = clientPlayer.getPosition(partialTick);
+        Vec3 currentPosition = clientPlayer.position();
+        AABB currentBox = boundingBox.move(interpolatedPosition.subtract(currentPosition));
 
         AABB startBox = ExtremeEvasionEvents.getExtremeEvasionStartAABB(player);
 

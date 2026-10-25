@@ -17,11 +17,7 @@ import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
 public final class CounterAttackGoldReplay {
-
     private static Capture capture;
-
-    private CounterAttackGoldReplay() {
-    }
 
     public static void capture(ItemStack stack, BakedModel model, PoseStack poseStack, int packedOverlay, float intensity) {
         if (stack.isEmpty() || model.isCustomRenderer() || intensity <= 0.0F) {

@@ -7,7 +7,6 @@ import net.minecraftforge.eventbus.api.Event;
 
 @Cancelable
 public class ExtremeEvasionTriggeredEvent extends Event {
-
     private final ServerPlayer player;
     private final DamageSource damageSource;
     private final boolean bulletTimeTriggered;

@@ -13,9 +13,6 @@ public final class RollCompat {
     private static final List<RollProvider> PROVIDERS = new ArrayList<>();
     private static boolean initialized;
 
-    private RollCompat() {
-    }
-
     public static void init() {
         if (initialized) {
             return;

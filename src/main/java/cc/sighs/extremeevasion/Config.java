@@ -11,7 +11,6 @@ import java.util.List;
 
 @Mod.EventBusSubscriber(modid = ExtremeEvasion.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class Config {
-
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
 
     private static final ForgeConfigSpec.IntValue MINIMUM_EXTREME_EVASION_WINDOW_TICKS = BUILDER

@@ -26,7 +26,6 @@ import java.io.IOException;
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(ExtremeEvasion.MODID)
 public class ExtremeEvasion {
-
     // Define mod id in a common place for everything to reference
     public static final String MODID = "extremeevasion";
     // Directly reference a slf4j logger

@@ -10,7 +10,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Player.class)
 public abstract class PlayerAttackStrengthMixin {
-
     @Inject(method = "getAttackStrengthScale", at = @At("HEAD"), cancellable = true)
     private void extremeevasion$getFullCounterAttackStrength(float partialTick, CallbackInfoReturnable<Float> cir) {
         Player player = (Player) (Object) this;

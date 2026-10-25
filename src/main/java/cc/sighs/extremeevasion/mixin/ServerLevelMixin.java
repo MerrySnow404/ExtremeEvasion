@@ -19,21 +19,25 @@ public class ServerLevelMixin {
 
     @Inject(method = "tickNonPassenger", at = @At("HEAD"))
     private void extremeEvasion$beginEntityTick(Entity entity, CallbackInfo callbackInfo) {
-        EchoHandler.modifiesBoundingBox = EchoHandler.shouldModify(entity);
+        EchoHandler.currentEntity = entity;
+        EchoHandler.modifiesBoundingBoxAndPos.set(EchoHandler.shouldModifyFor(entity));
     }
 
     @Inject(method = "tickNonPassenger", at = @At("RETURN"))
     private void extremeEvasion$endEntityTick(Entity entity, CallbackInfo callbackInfo) {
-        EchoHandler.modifiesBoundingBox = false;
+        EchoHandler.modifiesBoundingBoxAndPos.remove();
+        EchoHandler.currentEntity = null;
     }
 
     @Inject(method = "tickPassenger", at = @At("HEAD"))
     private void extremeEvasion$beginPassengerTick(Entity vehicle, Entity passenger, CallbackInfo callbackInfo) {
-        EchoHandler.modifiesBoundingBox = EchoHandler.shouldModify(passenger);
+        EchoHandler.currentEntity = passenger;
+        EchoHandler.modifiesBoundingBoxAndPos.set(EchoHandler.shouldModifyFor(passenger));
     }
 
     @Inject(method = "tickPassenger", at = @At("RETURN"))
     private void extremeEvasion$endPassengerTick(Entity vehicle, Entity passenger, CallbackInfo callbackInfo) {
-        EchoHandler.modifiesBoundingBox = false;
+        EchoHandler.modifiesBoundingBoxAndPos.remove();
+        EchoHandler.currentEntity = null;
     }
 }

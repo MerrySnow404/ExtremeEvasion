@@ -10,9 +10,6 @@ import yesman.epicfight.world.capabilities.EpicFightCapabilities;
 import yesman.epicfight.world.capabilities.entitypatch.player.ServerPlayerPatch;
 
 final class EpicFightRollProviderInner {
-    private EpicFightRollProviderInner() {
-    }
-
     static boolean isRolling(ServerPlayer player) {
         ServerPlayerPatch patch = EpicFightCapabilities.getServerPlayerPatch(player);
         if (patch == null) {

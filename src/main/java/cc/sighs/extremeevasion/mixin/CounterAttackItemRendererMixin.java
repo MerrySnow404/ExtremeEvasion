@@ -1,11 +1,7 @@
 package cc.sighs.extremeevasion.mixin;
 
-import cc.sighs.extremeevasion.client.CounterAttackGoldRenderType;
-import cc.sighs.extremeevasion.client.CounterAttackClientState;
 import cc.sighs.extremeevasion.Config;
-import cc.sighs.extremeevasion.client.BulletTimeClientState;
-import cc.sighs.extremeevasion.client.CounterAttackGoldReplay;
-import cc.sighs.extremeevasion.client.OculusCompat;
+import cc.sighs.extremeevasion.client.*;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -30,7 +26,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ItemRenderer.class)
 public abstract class CounterAttackItemRendererMixin {
-
     @Unique
     private static final ThreadLocal<Boolean> extremeevasion$renderCounterAttackItem = ThreadLocal.withInitial(() -> false);
     @Unique
@@ -132,7 +127,8 @@ public abstract class CounterAttackItemRendererMixin {
     }
 
     @Unique
-    private record CounterAttackGoldVertexConsumer(VertexConsumer delegate, float intensity, boolean tintGold) implements VertexConsumer {
+    private record CounterAttackGoldVertexConsumer(VertexConsumer delegate, float intensity,
+                                                   boolean tintGold) implements VertexConsumer {
 
         @Override
         public VertexConsumer vertex(double x, double y, double z) {

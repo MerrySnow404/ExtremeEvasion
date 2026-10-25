@@ -3,12 +3,8 @@ package cc.sighs.extremeevasion.client;
 import cc.sighs.extremeevasion.Config;
 
 public final class BulletTimeClientState {
-
     private static long startNanos;
     private static long durationNanos;
-
-    private BulletTimeClientState() {
-    }
 
     public static void start(long durationMillis) {
         startNanos = System.nanoTime();
