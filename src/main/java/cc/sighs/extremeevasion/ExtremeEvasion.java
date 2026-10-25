@@ -3,6 +3,7 @@ package cc.sighs.extremeevasion;
 import cc.sighs.extremeevasion.client.BulletTimeShaderManager;
 import cc.sighs.extremeevasion.client.CounterAttackGoldRenderType;
 import cc.sighs.extremeevasion.compat.roll.RollCompat;
+import cc.sighs.extremeevasion.handler.TaCZHandler;
 import cc.sighs.extremeevasion.network.ExtremeEvasionNetwork;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.logging.LogUtils;
@@ -11,6 +12,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -44,6 +46,9 @@ public class ExtremeEvasion {
         }
 
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        if (!ModList.get().isLoaded("tacz")) return;
+
+        NeoForge.EVENT_BUS.register(TaCZHandler.class);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

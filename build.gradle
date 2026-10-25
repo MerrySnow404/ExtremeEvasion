@@ -75,6 +75,7 @@ dependencies {
     implementation "curse.maven:playeranimator-658587:7389814"
     // Optional integration: the mod continues to work without TimeScaleLib installed.
     implementation "curse.maven:timescalelib-1542930:8608560"
+    implementation "curse.maven:tacz-1-21-1-1353462:9027337"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
