@@ -11,12 +11,12 @@ import net.minecraft.world.phys.Vec3;
 import java.util.List;
 
 public final class EchoHandler {
-    public static final TagObject<EntityType<?>> ENTITY_TYPE_BLACKLIST = new TagObject<>();
+    public static final KeySet<EntityType<?>> ENTITY_TYPE_BLACKLIST = new KeySet<>(Registries.ENTITY_TYPE);
     public static final ThreadLocal<Boolean> modifiesBoundingBoxAndPos = ThreadLocal.withInitial(() -> false);
     public static Entity currentEntity;
 
     public static boolean shouldModifyFor(Entity entity) {
-        return !ENTITY_TYPE_BLACKLIST.is(entity.getType().builtInRegistryHolder());
+        return !ENTITY_TYPE_BLACKLIST.contains(entity.getType());
     }
 
     public static boolean shouldModifyBoundingBox(Object object) {
@@ -41,7 +41,6 @@ public final class EchoHandler {
     }
 
     public static void reloadEntityTypeBlacklist(List<? extends String> entries) {
-        ENTITY_TYPE_BLACKLIST.clear();
-        for (String entry : entries) ENTITY_TYPE_BLACKLIST.add(entry, Registries.ENTITY_TYPE);
+        ENTITY_TYPE_BLACKLIST.updateKeys(entries);
     }
 }
