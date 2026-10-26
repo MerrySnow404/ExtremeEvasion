@@ -14,7 +14,7 @@ public class EchoHandler {
     /**
      * Entity types and tags excluded from trajectory collision checks.
      */
-    public static final TagObject<EntityType<?>> ENTITY_TYPE_BLACKLIST = new TagObject<>();
+    public static final KeySet<EntityType<?>> ENTITY_TYPE_BLACKLIST = new KeySet<>(Registries.ENTITY_TYPE);
     /**
      * Per-thread scope used while a whitelisted entity is ticking.
      */
@@ -22,7 +22,7 @@ public class EchoHandler {
     public static Entity currentEntity;
 
     public static boolean shouldModifyFor(Entity entity) {
-        return !ENTITY_TYPE_BLACKLIST.is(entity.getType().builtInRegistryHolder());
+        return !ENTITY_TYPE_BLACKLIST.contains(entity.getType());
     }
 
     public static boolean shouldModifyBoundingBox(Object object) {
@@ -59,9 +59,6 @@ public class EchoHandler {
     }
 
     public static void reloadEntityTypeBlacklist(List<? extends String> entries) {
-        ENTITY_TYPE_BLACKLIST.clear();
-        for (String entry : entries) {
-            ENTITY_TYPE_BLACKLIST.add(entry, Registries.ENTITY_TYPE);
-        }
+        ENTITY_TYPE_BLACKLIST.updateKeys(entries);
     }
 }

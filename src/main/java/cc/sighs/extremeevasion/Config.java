@@ -174,9 +174,6 @@ public final class Config {
     public static float bulletTimeTriggerSoundVolume;
     public static float bulletTimeTriggerSoundPitch;
 
-    private Config() {
-    }
-
     @SubscribeEvent
     static void onLoad(ModConfigEvent event) {
         minimumExtremeEvasionWindowTicks = MINIMUM_EXTREME_EVASION_WINDOW_TICKS.get();
@@ -200,8 +197,8 @@ public final class Config {
         enableBulletTimeTriggerSound = ENABLE_BULLET_TIME_TRIGGER_SOUND.get();
         enableTrajectoryAabbDebugRendering = ENABLE_TRAJECTORY_AABB_DEBUG_RENDERING.get();
         extremeEvasionEntityBlacklist = EXTREME_EVASION_ENTITY_BLACKLIST.get();
-        EchoHandler.reloadEntityTypeBlacklist(extremeEvasionEntityBlacklist);
         bulletTimeTriggerSoundVolume = BULLET_TIME_TRIGGER_SOUND_VOLUME.get().floatValue();
         bulletTimeTriggerSoundPitch = BULLET_TIME_TRIGGER_SOUND_PITCH.get().floatValue();
+        EchoHandler.reloadEntityTypeBlacklist(extremeEvasionEntityBlacklist);
     }
 }
