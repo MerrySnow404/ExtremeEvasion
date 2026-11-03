@@ -430,8 +430,9 @@ public final class ExtremeEvasionEvents {
     }
 
     private static void clearExpiredActiveCounterAttack(Player player, CompoundTag data) {
-        if (data.getBoolean(DATA_COUNTER_ATTACK_ACTIVE)
-                && player.level().getGameTime() > data.getLong(DATA_COUNTER_ATTACK_ACTIVE_TICK)) {
+        var active = data.getBoolean(DATA_COUNTER_ATTACK_ACTIVE);
+        if (!active
+                || player.level().getGameTime() > data.getLong(DATA_COUNTER_ATTACK_ACTIVE_TICK)) {
             clearActiveCounterAttack(data);
             if (!hasCounterAttack(player, data) && player instanceof ServerPlayer serverPlayer) {
                 ExtremeEvasionNetwork.sendCounterAttack(serverPlayer, false);
