@@ -34,6 +34,7 @@ public final class ExtremeEvasionEvents {
     private static final String DATA_ROOT = ExtremeEvasion.MODID;
     private static final String DATA_ACTIVE = "extreme_window_active";
     private static final String DATA_SUCCESS = "extreme_window_success";
+    private static final String DATA_BLOCKED = "extreme_window_blocked";
     private static final String DATA_START_MIN_X = "extreme_window_start_min_x";
     private static final String DATA_START_MIN_Y = "extreme_window_start_min_y";
     private static final String DATA_START_MIN_Z = "extreme_window_start_min_z";
@@ -65,6 +66,7 @@ public final class ExtremeEvasionEvents {
         clearExpiredCounterAttack(player, data);
         clearExpiredActiveCounterAttack(player, data);
         clearExpiredBulletTimeInvulnerability(data);
+        consumeBlocked(player);
 
         if (!rolling) {
             data.remove(DATA_ROLL_CONSUMED);
@@ -98,8 +100,10 @@ public final class ExtremeEvasionEvents {
         }
 
         sanitizeLegacyState(player, getData(player));
+        consumeBlocked(player);
         if (hasActiveExtremeEvasionWindow(player) && isTriggerableSource(event.getSource())) {
             tryTriggerExtremeEvasion(player, event.getSource());
+            setBlocked(player);
         }
     }
 
@@ -109,7 +113,7 @@ public final class ExtremeEvasionEvents {
             return;
         }
 
-        if (isBulletTimeInvulnerable(player)) {
+        if (isBulletTimeInvulnerable(player) || consumeBlocked(player)) {
             event.setCanceled(true);
         }
     }
@@ -242,6 +246,19 @@ public final class ExtremeEvasionEvents {
         data.remove(DATA_START_MAX_Z);
         data.remove(DATA_MIN_END_TICK);
         data.remove(DATA_MAX_END_TICK);
+    }
+
+    private static void setBlocked(Player player) {
+        var data = getData(player);
+        data.putBoolean(DATA_BLOCKED, true);
+    }
+
+    private static boolean consumeBlocked(Player player) {
+        var data = getData(player);
+        if (!data.getBoolean(DATA_BLOCKED)) return false;
+
+        data.remove(DATA_BLOCKED);
+        return true;
     }
 
     private static CompoundTag getData(Player player) {
