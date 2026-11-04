@@ -43,6 +43,7 @@ public final class ExtremeEvasionEvents {
     private static final String DATA_START_MAX_Z = "extreme_window_start_max_z";
     private static final String DATA_MIN_END_TICK = "extreme_window_min_end_tick";
     private static final String DATA_MAX_END_TICK = "extreme_window_max_end_tick";
+    private static final String DATA_EVASION_COOLDOWN_END_TICK = "extreme_evasion_cooldown_end_tick";
     private static final String DATA_ROLL_CONSUMED = "extreme_roll_consumed";
     private static final String DATA_COUNTER_ATTACK_END_TICK = "extreme_counter_attack_end_tick";
     private static final String DATA_COUNTER_ATTACK_ACTIVE = "extreme_counter_attack_active";
@@ -101,8 +102,7 @@ public final class ExtremeEvasionEvents {
 
         sanitizeLegacyState(player, getData(player));
         consumeBlocked(player);
-        if (hasActiveExtremeEvasionWindow(player) && isTriggerableSource(event.getSource())) {
-            tryTriggerExtremeEvasion(player, event.getSource());
+        if (hasActiveExtremeEvasionWindow(player) && isTriggerableSource(event.getSource()) && tryTriggerExtremeEvasion(player, event.getSource())) {
             setBlocked(player);
         }
     }
@@ -214,7 +214,7 @@ public final class ExtremeEvasionEvents {
     }
 
     private static void startWindow(Player player, CompoundTag data) {
-        if (!(player instanceof ServerPlayer)) {
+        if (!(player instanceof ServerPlayer) || isExtremeEvasionOnCooldown(player, data)) {
             return;
         }
 
@@ -302,7 +302,9 @@ public final class ExtremeEvasionEvents {
 
     public static boolean tryTriggerExtremeEvasion(ServerPlayer player, DamageSource damageSource) {
         CompoundTag data = getData(player);
-        if (!isWindowArmed(data) || !isExtremeEvasionWindowOpen(player, data)) {
+        if (isExtremeEvasionOnCooldown(player, data)
+                || !isWindowArmed(data)
+                || !isExtremeEvasionWindowOpen(player, data)) {
             return false;
         }
 
@@ -314,6 +316,13 @@ public final class ExtremeEvasionEvents {
 
         clearWindow(data);
         data.putBoolean(DATA_ROLL_CONSUMED, true);
+        if (Config.extremeEvasionCooldownTicks > 0) {
+            data.putLong(
+                    DATA_EVASION_COOLDOWN_END_TICK,
+                    player.level().getGameTime() + Config.extremeEvasionCooldownTicks
+            );
+            ExtremeEvasionNetwork.sendEvasionCooldown(player, Config.extremeEvasionCooldownTicks);
+        }
         grantCounterAttack(player, data);
         if (triggerBulletTime) {
             boolean usingTimeScaleLib = BulletTimeController.trigger();
@@ -326,6 +335,19 @@ public final class ExtremeEvasionEvents {
             }
         }
         return true;
+    }
+
+    private static boolean isExtremeEvasionOnCooldown(Player player, CompoundTag data) {
+        if (!data.contains(DATA_EVASION_COOLDOWN_END_TICK)) {
+            return false;
+        }
+
+        if (player.level().getGameTime() < data.getLong(DATA_EVASION_COOLDOWN_END_TICK)) {
+            return true;
+        }
+
+        data.remove(DATA_EVASION_COOLDOWN_END_TICK);
+        return false;
     }
 
     private static boolean canTriggerBulletTime(ServerPlayer player) {
@@ -447,8 +469,7 @@ public final class ExtremeEvasionEvents {
     }
 
     private static void clearExpiredActiveCounterAttack(Player player, CompoundTag data) {
-        var active = data.getBoolean(DATA_COUNTER_ATTACK_ACTIVE);
-        if (!active
+        if (!data.getBoolean(DATA_COUNTER_ATTACK_ACTIVE)
                 || player.level().getGameTime() > data.getLong(DATA_COUNTER_ATTACK_ACTIVE_TICK)) {
             clearActiveCounterAttack(data);
             if (!hasCounterAttack(player, data) && player instanceof ServerPlayer serverPlayer) {

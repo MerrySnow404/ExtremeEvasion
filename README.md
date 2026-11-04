@@ -87,6 +87,26 @@ maximumExtremeEvasionWindowTicks = 20
 
 如果最大值小于最小值，模组会按最小值处理，避免配置错误导致窗口无效。
 
+### 极限闪避冷却
+
+```toml
+extremeEvasionCooldownTicks = 40
+```
+
+`extremeEvasionCooldownTicks` 控制一次极限闪避成功后，下一次极限闪避能够触发前的冷却时间，单位为 tick；`20tick` 约等于 `1` 秒。设为 `0` 可关闭冷却。
+
+冷却进度 HUD 的位置和大小也可配置：
+
+```toml
+extremeEvasionCooldownGuiScale = 1.0
+extremeEvasionCooldownGuiRatioX = 1.0
+extremeEvasionCooldownGuiRatioY = 1.0
+extremeEvasionCooldownGuiOffsetX = 0
+extremeEvasionCooldownGuiOffsetY = 0
+```
+
+`extremeEvasionCooldownGuiScale` 控制圆环缩放比例，范围为 `0.25` 到 `4.0`。`extremeEvasionCooldownGuiRatioX/Y` 控制位置锚点，分别与 `getGuiScaledWidth()` 和 `getGuiScaledHeight()` 相乘；默认 `1.0/1.0` 表示右下角。X/Y 偏移以 GUI 像素为单位，相对于锚点调整；正 X 向右，正 Y 向下。
+
 ### 极限反击
 
 ```toml

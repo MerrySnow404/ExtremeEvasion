@@ -30,10 +30,19 @@ public final class ExtremeEvasionNetwork {
                 .decoder(SyncBulletTimePacket::decode)
                 .consumerMainThread(SyncBulletTimePacket::handle)
                 .add();
+        CHANNEL.messageBuilder(SyncEvasionCooldownPacket.class, nextPacketId++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(SyncEvasionCooldownPacket::encode)
+                .decoder(SyncEvasionCooldownPacket::decode)
+                .consumerMainThread(SyncEvasionCooldownPacket::handle)
+                .add();
     }
 
     public static void sendCounterAttack(ServerPlayer player, boolean active) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new SyncCounterAttackPacket(active));
+    }
+
+    public static void sendEvasionCooldown(ServerPlayer player, int cooldownTicks) {
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new SyncEvasionCooldownPacket(cooldownTicks));
     }
 
     public static void sendBulletTime(ServerPlayer player, long durationMillis) {
