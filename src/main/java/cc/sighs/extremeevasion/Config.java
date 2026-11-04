@@ -23,6 +23,48 @@ public final class Config {
             )
             .defineInRange("maximumExtremeEvasionWindowTicks", 20, 0, 20 * 60);
 
+    private static final ModConfigSpec.IntValue EXTREME_EVASION_COOLDOWN_TICKS = BUILDER
+            .comment(
+                    "Ticks after a successful extreme evasion before another one can trigger.",
+                    "极限闪避成功后，下一次极限闪避触发前的冷却 tick 数。"
+            )
+            .defineInRange("extremeEvasionCooldownTicks", 40, 0, 20 * 60);
+
+    private static final ModConfigSpec.DoubleValue EXTREME_EVASION_COOLDOWN_GUI_SCALE = BUILDER
+            .comment(
+                    "Scale of the extreme evasion cooldown HUD ring.",
+                    "极限闪避冷却 HUD 圆环的缩放比例。"
+            )
+            .defineInRange("extremeEvasionCooldownGuiScale", 1.0D, 0.25D, 4.0D);
+
+    private static final ModConfigSpec.DoubleValue EXTREME_EVASION_COOLDOWN_GUI_RATIO_X = BUILDER
+            .comment(
+                    "Horizontal HUD anchor ratio multiplied by the scaled GUI width.",
+                    "HUD 水平位置锚点比例，会与 GUI 宽度相乘。"
+            )
+            .defineInRange("extremeEvasionCooldownGuiRatioX", 1.0D, 0.0D, 1.0D);
+
+    private static final ModConfigSpec.DoubleValue EXTREME_EVASION_COOLDOWN_GUI_RATIO_Y = BUILDER
+            .comment(
+                    "Vertical HUD anchor ratio multiplied by the scaled GUI height.",
+                    "HUD 垂直位置锚点比例，会与 GUI 高度相乘。"
+            )
+            .defineInRange("extremeEvasionCooldownGuiRatioY", 1.0D, 0.0D, 1.0D);
+
+    private static final ModConfigSpec.IntValue EXTREME_EVASION_COOLDOWN_GUI_OFFSET_X = BUILDER
+            .comment(
+                    "Horizontal pixel offset from the HUD anchor; positive values move right.",
+                    "相对于 HUD 锚点的水平像素偏移；正值向右移动。"
+            )
+            .defineInRange("extremeEvasionCooldownGuiOffsetX", 0, -4096, 4096);
+
+    private static final ModConfigSpec.IntValue EXTREME_EVASION_COOLDOWN_GUI_OFFSET_Y = BUILDER
+            .comment(
+                    "Vertical pixel offset from the HUD anchor; positive values move down.",
+                    "相对于 HUD 锚点的垂直像素偏移；正值向下移动。"
+            )
+            .defineInRange("extremeEvasionCooldownGuiOffsetY", 0, -4096, 4096);
+
     private static final ModConfigSpec.IntValue EXTREME_COUNTER_ATTACK_WINDOW_TICKS = BUILDER
             .comment(
                     "Ticks after a successful extreme evasion during which Extreme Counter is available.",
@@ -153,6 +195,12 @@ public final class Config {
 
     public static int minimumExtremeEvasionWindowTicks;
     public static int maximumExtremeEvasionWindowTicks;
+    public static int extremeEvasionCooldownTicks;
+    public static double extremeEvasionCooldownGuiScale;
+    public static double extremeEvasionCooldownGuiRatioX;
+    public static double extremeEvasionCooldownGuiRatioY;
+    public static int extremeEvasionCooldownGuiOffsetX;
+    public static int extremeEvasionCooldownGuiOffsetY;
     public static int extremeCounterAttackWindowTicks;
     public static int extremeCounterAttackCharges;
     public static boolean enableExtremeCounterAttackCritical;
@@ -178,6 +226,12 @@ public final class Config {
                 MAXIMUM_EXTREME_EVASION_WINDOW_TICKS.get(),
                 minimumExtremeEvasionWindowTicks
         );
+        extremeEvasionCooldownTicks = EXTREME_EVASION_COOLDOWN_TICKS.get();
+        extremeEvasionCooldownGuiScale = EXTREME_EVASION_COOLDOWN_GUI_SCALE.get();
+        extremeEvasionCooldownGuiRatioX = EXTREME_EVASION_COOLDOWN_GUI_RATIO_X.get();
+        extremeEvasionCooldownGuiRatioY = EXTREME_EVASION_COOLDOWN_GUI_RATIO_Y.get();
+        extremeEvasionCooldownGuiOffsetX = EXTREME_EVASION_COOLDOWN_GUI_OFFSET_X.get();
+        extremeEvasionCooldownGuiOffsetY = EXTREME_EVASION_COOLDOWN_GUI_OFFSET_Y.get();
         extremeCounterAttackWindowTicks = EXTREME_COUNTER_ATTACK_WINDOW_TICKS.get();
         extremeCounterAttackCharges = EXTREME_COUNTER_ATTACK_CHARGES.get();
         enableExtremeCounterAttackCritical = ENABLE_EXTREME_COUNTER_ATTACK_CRITICAL.get();

@@ -12,10 +12,19 @@ public final class ExtremeEvasionNetwork {
         PayloadRegistrar registrar = event.registrar(PROTOCOL_VERSION);
         registrar.playToClient(SyncCounterAttackPacket.TYPE, SyncCounterAttackPacket.STREAM_CODEC, SyncCounterAttackPacket::handle);
         registrar.playToClient(SyncBulletTimePacket.TYPE, SyncBulletTimePacket.STREAM_CODEC, SyncBulletTimePacket::handle);
+        registrar.playToClient(
+                SyncEvasionCooldownPacket.TYPE,
+                SyncEvasionCooldownPacket.STREAM_CODEC,
+                SyncEvasionCooldownPacket::handle
+        );
     }
 
     public static void sendCounterAttack(ServerPlayer player, boolean active) {
         PacketDistributor.sendToPlayer(player, new SyncCounterAttackPacket(active));
+    }
+
+    public static void sendEvasionCooldown(ServerPlayer player, int cooldownTicks) {
+        PacketDistributor.sendToPlayer(player, new SyncEvasionCooldownPacket(cooldownTicks));
     }
 
     public static void sendBulletTime(ServerPlayer player, long durationMillis) {
