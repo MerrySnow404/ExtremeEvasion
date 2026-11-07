@@ -1,8 +1,11 @@
 package cc.sighs.extremeevasion.client;
 
+import net.minecraft.client.Minecraft;
+
 public final class EvasionCooldownClientState {
     private static int totalTicks;
     private static int remainingTicks;
+    private static boolean active;
 
     private EvasionCooldownClientState() {
     }
@@ -10,10 +13,11 @@ public final class EvasionCooldownClientState {
     public static void start(int ticks) {
         totalTicks = Math.max(0, ticks);
         remainingTicks = totalTicks;
+        active = totalTicks > 0;
     }
 
     public static void tick() {
-        if (remainingTicks > 0) {
+        if (remainingTicks > 0 && !Minecraft.getInstance().isPaused()) {
             remainingTicks--;
         }
     }
@@ -23,5 +27,9 @@ public final class EvasionCooldownClientState {
             return 0.0F;
         }
         return (float) remainingTicks / totalTicks;
+    }
+
+    public static boolean isActive() {
+        return active;
     }
 }

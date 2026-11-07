@@ -37,7 +37,7 @@ public final class EvasionCooldownHud {
     @SubscribeEvent
     public static void onRenderOverlay(RenderGuiEvent.Post event) {
         float progress = EvasionCooldownClientState.getProgress();
-        if (progress <= 0.0F) {
+        if (!EvasionCooldownClientState.isActive()) {
             return;
         }
 
@@ -57,7 +57,9 @@ public final class EvasionCooldownHud {
                 size - 2,
                 size - 2
         );
-        drawProgressRing(event, left, top, size, Math.round(SEGMENTS * progress));
+        if (progress > 0.0F) {
+            drawProgressRing(event, left, top, size, Math.round(SEGMENTS * progress));
+        }
     }
 
     private static void drawProgressRing(RenderGuiEvent.Post event, int left, int top, int size, int segments) {
