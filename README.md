@@ -107,6 +107,7 @@ extremeCounterAttackCharges = 1
 enableExtremeCounterAttackCritical = true
 enableExtremeCounterAttackArmorPiercing = true
 enableExtremeCounterGoldShader = true
+extremeCounterAttackDamageTypeWhitelist = ["minecraft:arrow", "minecraft:trident"]
 ```
 
 `extremeCounterAttackWindowTicks` 是极限反击可用时间，`20tick` 约等于 `1` 秒。  
@@ -114,6 +115,7 @@ enableExtremeCounterGoldShader = true
 `enableExtremeCounterAttackCritical` 控制是否必定暴击。  
 `enableExtremeCounterAttackArmorPiercing` 控制是否无视护甲。  
 `enableExtremeCounterGoldShader` 控制是否显示手持物品金色高亮。
+`extremeCounterAttackDamageTypeWhitelist` 列出可以消耗极限反击次数的伤害类型 ID 或标签，默认允许箭矢和三叉戟；标签以 `#` 开头。
 
 ### 子弹时间
 

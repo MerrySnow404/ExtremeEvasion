@@ -1,6 +1,8 @@
 package cc.sighs.extremeevasion;
 
 import cc.sighs.extremeevasion.handler.EchoHandler;
+import cc.sighs.extremeevasion.handler.KeySet;
+import net.minecraft.core.registries.Registries;
 import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -99,6 +101,14 @@ public final class Config {
                     "极限反击激活期间，是否给手持物品渲染金色发光着色器。"
             )
             .define("enableExtremeCounterGoldShader", true);
+
+    private static final ModConfigSpec.ConfigValue<List<? extends String>> EXTREME_COUNTER_ATTACK_DAMAGE_TYPE_WHITELIST = BUILDER
+            .comment(
+                    "Damage type ids or tags that can consume and trigger Extreme Counter. Prefix tags with #.",
+                    "可以消耗并触发极限反击的伤害类型 ID 或标签；标签请以 # 开头。"
+            )
+            .defineList("extremeCounterAttackDamageTypeWhitelist", List.of("minecraft:arrow", "minecraft:trident"), () -> "", value -> value instanceof String);
+    public static final KeySet<net.minecraft.world.damagesource.DamageType> EXTREME_COUNTER_ATTACK_DAMAGE_TYPES = new KeySet<>(Registries.DAMAGE_TYPE);
 
     private static final ModConfigSpec.BooleanValue ENABLE_BULLET_TIME = BUILDER
             .comment(
@@ -217,6 +227,7 @@ public final class Config {
     public static boolean enableBulletTimeTriggerSound;
     public static boolean enableTrajectoryAabbDebugRendering;
     public static List<? extends String> extremeEvasionEntityBlacklist;
+    public static List<? extends String> extremeCounterAttackDamageTypeWhitelist;
     public static float bulletTimeTriggerSoundVolume;
     public static float bulletTimeTriggerSoundPitch;
 
@@ -248,6 +259,8 @@ public final class Config {
         enableBulletTimeTriggerSound = ENABLE_BULLET_TIME_TRIGGER_SOUND.get();
         enableTrajectoryAabbDebugRendering = ENABLE_TRAJECTORY_AABB_DEBUG_RENDERING.get();
         extremeEvasionEntityBlacklist = EXTREME_EVASION_ENTITY_BLACKLIST.get();
+        extremeCounterAttackDamageTypeWhitelist = EXTREME_COUNTER_ATTACK_DAMAGE_TYPE_WHITELIST.get();
+        EXTREME_COUNTER_ATTACK_DAMAGE_TYPES.updateKeys(extremeCounterAttackDamageTypeWhitelist);
         bulletTimeTriggerSoundVolume = BULLET_TIME_TRIGGER_SOUND_VOLUME.get().floatValue();
         bulletTimeTriggerSoundPitch = BULLET_TIME_TRIGGER_SOUND_PITCH.get().floatValue();
         EchoHandler.reloadEntityTypeBlacklist(extremeEvasionEntityBlacklist);

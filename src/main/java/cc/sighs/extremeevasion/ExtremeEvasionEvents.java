@@ -184,10 +184,24 @@ public final class ExtremeEvasionEvents {
         }
 
         CompoundTag data = getData(player);
+        boolean activatedByDamageType = false;
+        if (!data.getBoolean(DATA_COUNTER_ATTACK_ACTIVE)
+                && hasCounterAttack(player, data)
+                && Config.EXTREME_COUNTER_ATTACK_DAMAGE_TYPES.contains(event.getSource().type())) {
+            data.putBoolean(DATA_COUNTER_ATTACK_ACTIVE, true);
+            data.putLong(DATA_COUNTER_ATTACK_ACTIVE_TICK, player.level().getGameTime());
+            data.putUUID(DATA_COUNTER_ATTACK_TARGET_UUID, event.getEntity().getUUID());
+            consumeCounterAttack(data);
+            activatedByDamageType = true;
+        }
         if (!data.getBoolean(DATA_COUNTER_ATTACK_ACTIVE) || !isActiveCounterAttackTarget(event.getEntity(), data)) {
             return;
         }
 
+        if (activatedByDamageType && Config.enableExtremeCounterAttackCritical) {
+            event.setNewDamage(event.getNewDamage() * 1.5F);
+            player.crit(event.getEntity());
+        }
         if (Config.enableExtremeCounterAttackArmorPiercing) {
             event.setNewDamage(getArmorPiercingHurtAmount(event.getEntity(), event.getSource(), event.getNewDamage()));
         }
