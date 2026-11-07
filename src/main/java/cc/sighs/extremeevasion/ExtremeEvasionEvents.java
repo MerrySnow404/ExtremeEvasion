@@ -43,7 +43,7 @@ public final class ExtremeEvasionEvents {
     private static final String DATA_START_MAX_Z = "extreme_window_start_max_z";
     private static final String DATA_MIN_END_TICK = "extreme_window_min_end_tick";
     private static final String DATA_MAX_END_TICK = "extreme_window_max_end_tick";
-    private static final String DATA_EVASION_COOLDOWN_END_TICK = "extreme_evasion_cooldown_end_tick";
+    private static final String DATA_EVASION_COOLDOWN_TICKS_REMAINING = "extreme_evasion_cooldown_ticks_remaining";
     private static final String DATA_ROLL_CONSUMED = "extreme_roll_consumed";
     private static final String DATA_COUNTER_ATTACK_END_TICK = "extreme_counter_attack_end_tick";
     private static final String DATA_COUNTER_ATTACK_ACTIVE = "extreme_counter_attack_active";
@@ -68,6 +68,18 @@ public final class ExtremeEvasionEvents {
         clearExpiredActiveCounterAttack(player, data);
         clearExpiredBulletTimeInvulnerability(data);
         consumeBlocked(player);
+
+        if (data.contains(DATA_EVASION_COOLDOWN_TICKS_REMAINING)) {
+            int remainingTicks = data.getInt(DATA_EVASION_COOLDOWN_TICKS_REMAINING);
+            if (remainingTicks > 0) {
+                data.putInt(DATA_EVASION_COOLDOWN_TICKS_REMAINING, remainingTicks - 1);
+            }
+            if (!isExtremeEvasionOnCooldown(player, data)
+                    && player instanceof ServerPlayer serverPlayer) {
+                data.remove(DATA_EVASION_COOLDOWN_TICKS_REMAINING);
+                ExtremeEvasionNetwork.sendEvasionCooldown(serverPlayer, 0);
+            }
+        }
 
         if (!rolling) {
             data.remove(DATA_ROLL_CONSUMED);
@@ -335,8 +347,8 @@ public final class ExtremeEvasionEvents {
         data.putBoolean(DATA_ROLL_CONSUMED, true);
         if (Config.extremeEvasionCooldownTicks > 0) {
             data.putLong(
-                    DATA_EVASION_COOLDOWN_END_TICK,
-                    player.level().getGameTime() + Config.extremeEvasionCooldownTicks
+                    DATA_EVASION_COOLDOWN_TICKS_REMAINING,
+                    Config.extremeEvasionCooldownTicks
             );
             ExtremeEvasionNetwork.sendEvasionCooldown(player, Config.extremeEvasionCooldownTicks);
         }
@@ -362,16 +374,7 @@ public final class ExtremeEvasionEvents {
     }
 
     private static boolean isExtremeEvasionOnCooldown(Player player, CompoundTag data) {
-        if (!data.contains(DATA_EVASION_COOLDOWN_END_TICK)) {
-            return false;
-        }
-
-        if (player.level().getGameTime() < data.getLong(DATA_EVASION_COOLDOWN_END_TICK)) {
-            return true;
-        }
-
-        data.remove(DATA_EVASION_COOLDOWN_END_TICK);
-        return false;
+        return data.getInt(DATA_EVASION_COOLDOWN_TICKS_REMAINING) > 0;
     }
 
     private static boolean canTriggerBulletTime(ServerPlayer player) {
