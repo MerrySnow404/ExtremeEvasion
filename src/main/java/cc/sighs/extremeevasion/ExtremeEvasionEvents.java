@@ -305,7 +305,7 @@ public final class ExtremeEvasionEvents {
         if (isExtremeEvasionOnCooldown(player, data)
                 || !isWindowArmed(data)
                 || !isExtremeEvasionWindowOpen(player, data)
-                || damageSource.getEntity() == player) {
+                || protectsPlayer(player, damageSource)) {
             return false;
         }
 
@@ -336,6 +336,13 @@ public final class ExtremeEvasionEvents {
                 ExtremeEvasionNetwork.sendBulletTime(player, Config.bulletTimeDurationMillis, !usingTimeScaleLib);
             }
         }
+        return true;
+    }
+
+    private static boolean protectsPlayer(ServerPlayer player, DamageSource damageSource) {
+        if (damageSource.getEntity() != player) return false;
+
+        setBlocked(player);
         return true;
     }
 
