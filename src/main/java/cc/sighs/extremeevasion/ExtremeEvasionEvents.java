@@ -125,7 +125,9 @@ public final class ExtremeEvasionEvents {
         if (!(entity instanceof Player player) || !hasActiveExtremeEvasionWindow(player)) return;
 
         var projectile = event.getProjectile();
-        tryTriggerExtremeEvasion((ServerPlayer) player, projectile.damageSources().mobProjectile(projectile, null));
+        var owner = projectile.getOwner();
+        var living = owner instanceof LivingEntity ? (LivingEntity) owner : null;
+        tryTriggerExtremeEvasion((ServerPlayer) player, projectile.damageSources().mobProjectile(projectile, living));
     }
 
     @SubscribeEvent
@@ -302,7 +304,8 @@ public final class ExtremeEvasionEvents {
         CompoundTag data = getData(player);
         if (isExtremeEvasionOnCooldown(player, data)
                 || !isWindowArmed(data)
-                || !isExtremeEvasionWindowOpen(player, data)) {
+                || !isExtremeEvasionWindowOpen(player, data)
+                || damageSource.getEntity() == player) {
             return false;
         }
 
