@@ -64,6 +64,9 @@ public final class ExtremeEvasionEvents {
         boolean active;
         sanitizeLegacyState(player, data);
         active = data.getBoolean(DATA_ACTIVE);
+        decrementRemainingTicks(data, DATA_MIN_END_TICK);
+        decrementRemainingTicks(data, DATA_MAX_END_TICK);
+        decrementRemainingTicks(data, DATA_COUNTER_ATTACK_END_TICK);
         clearExpiredCounterAttack(player, data);
         clearExpiredActiveCounterAttack(player, data);
         clearExpiredBulletTimeInvulnerability(data);
@@ -167,7 +170,7 @@ public final class ExtremeEvasionEvents {
         }
 
         data.putBoolean(DATA_COUNTER_ATTACK_ACTIVE, true);
-        data.putLong(DATA_COUNTER_ATTACK_ACTIVE_TICK, player.level().getGameTime());
+        data.putBoolean(DATA_COUNTER_ATTACK_ACTIVE_TICK, true);
         data.putUUID(DATA_COUNTER_ATTACK_TARGET_UUID, event.getTarget().getUUID());
         consumeCounterAttack(data);
     }
@@ -202,7 +205,7 @@ public final class ExtremeEvasionEvents {
                 && hasCounterAttack(player, data)
                 && Config.EXTREME_COUNTER_ATTACK_DAMAGE_TYPES.contains(event.getSource().type())) {
             data.putBoolean(DATA_COUNTER_ATTACK_ACTIVE, true);
-            data.putLong(DATA_COUNTER_ATTACK_ACTIVE_TICK, player.level().getGameTime());
+            data.putBoolean(DATA_COUNTER_ATTACK_ACTIVE_TICK, true);
             data.putUUID(DATA_COUNTER_ATTACK_TARGET_UUID, event.getEntity().getUUID());
             consumeCounterAttack(data);
             activatedByDamageType = true;
@@ -255,8 +258,8 @@ public final class ExtremeEvasionEvents {
         data.putDouble(DATA_START_MAX_X, aabb.maxX);
         data.putDouble(DATA_START_MAX_Y, aabb.maxY);
         data.putDouble(DATA_START_MAX_Z, aabb.maxZ);
-        data.putLong(DATA_MIN_END_TICK, player.level().getGameTime() + Config.minimumExtremeEvasionWindowTicks);
-        data.putLong(DATA_MAX_END_TICK, player.level().getGameTime() + Config.maximumExtremeEvasionWindowTicks);
+        data.putLong(DATA_MIN_END_TICK, Config.minimumExtremeEvasionWindowTicks);
+        data.putLong(DATA_MAX_END_TICK, Config.maximumExtremeEvasionWindowTicks);
     }
 
     private static void endWindow(CompoundTag data) {
@@ -447,12 +450,12 @@ public final class ExtremeEvasionEvents {
 
     private static boolean isMinimumWindowActive(Player player, CompoundTag data) {
         return data.contains(DATA_MIN_END_TICK)
-                && player.level().getGameTime() <= data.getLong(DATA_MIN_END_TICK);
+                && data.getLong(DATA_MIN_END_TICK) > 0;
     }
 
     private static boolean isMaximumWindowActive(Player player, CompoundTag data) {
         return data.contains(DATA_MAX_END_TICK)
-                && player.level().getGameTime() <= data.getLong(DATA_MAX_END_TICK);
+                && data.getLong(DATA_MAX_END_TICK) > 0;
     }
 
     private static boolean isExtremeEvasionWindowOpen(Player player, CompoundTag data) {
@@ -469,7 +472,7 @@ public final class ExtremeEvasionEvents {
             return;
         }
 
-        data.putLong(DATA_COUNTER_ATTACK_END_TICK, player.level().getGameTime() + windowTicks);
+        data.putLong(DATA_COUNTER_ATTACK_END_TICK, windowTicks);
         data.putInt(DATA_COUNTER_ATTACK_CHARGES, charges);
         clearActiveCounterAttack(data);
         ExtremeEvasionNetwork.sendCounterAttack(player, true);
@@ -481,13 +484,13 @@ public final class ExtremeEvasionEvents {
 
     private static boolean hasCounterAttack(Player player, CompoundTag data) {
         return data.contains(DATA_COUNTER_ATTACK_END_TICK)
-                && player.level().getGameTime() <= data.getLong(DATA_COUNTER_ATTACK_END_TICK)
+                && data.getLong(DATA_COUNTER_ATTACK_END_TICK) > 0
                 && data.getInt(DATA_COUNTER_ATTACK_CHARGES) > 0;
     }
 
     private static void clearExpiredCounterAttack(Player player, CompoundTag data) {
         if (data.contains(DATA_COUNTER_ATTACK_END_TICK)
-                && player.level().getGameTime() > data.getLong(DATA_COUNTER_ATTACK_END_TICK)) {
+                && data.getLong(DATA_COUNTER_ATTACK_END_TICK) <= 0) {
             clearCounterAttack(data);
             if (player instanceof ServerPlayer serverPlayer) {
                 ExtremeEvasionNetwork.sendCounterAttack(serverPlayer, false);
@@ -496,8 +499,7 @@ public final class ExtremeEvasionEvents {
     }
 
     private static void clearExpiredActiveCounterAttack(Player player, CompoundTag data) {
-        if (!data.getBoolean(DATA_COUNTER_ATTACK_ACTIVE)
-                || player.level().getGameTime() > data.getLong(DATA_COUNTER_ATTACK_ACTIVE_TICK)) {
+        if (!data.getBoolean(DATA_COUNTER_ATTACK_ACTIVE) || data.getBoolean(DATA_COUNTER_ATTACK_ACTIVE_TICK)) {
             clearActiveCounterAttack(data);
             if (!hasCounterAttack(player, data) && player instanceof ServerPlayer serverPlayer) {
                 ExtremeEvasionNetwork.sendCounterAttack(serverPlayer, false);
@@ -530,6 +532,17 @@ public final class ExtremeEvasionEvents {
         data.remove(DATA_COUNTER_ATTACK_ACTIVE);
         data.remove(DATA_COUNTER_ATTACK_ACTIVE_TICK);
         data.remove(DATA_COUNTER_ATTACK_TARGET_UUID);
+    }
+
+    private static void decrementRemainingTicks(CompoundTag data, String key) {
+        if (!data.contains(key)) {
+            return;
+        }
+
+        long remainingTicks = data.getLong(key);
+        if (remainingTicks > 0) {
+            data.putLong(key, remainingTicks - 1);
+        }
     }
 
     private static float getArmorPiercingHurtAmount(LivingEntity target, float desiredAfterArmor) {
