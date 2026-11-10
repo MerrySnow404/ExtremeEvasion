@@ -22,6 +22,10 @@ public final class EvasionCooldownHud {
 
     @SubscribeEvent
     public static void onRenderOverlay(RenderGuiOverlayEvent.Post event) {
+        if (!Config.enableExtremeEvasionCooldownGui) {
+            return;
+        }
+
         float progress = EvasionCooldownClientState.getProgress();
         if (!EvasionCooldownClientState.isActive()) {
             return;
@@ -29,9 +33,9 @@ public final class EvasionCooldownHud {
 
         int size = Math.max(1, (int) Math.round(BASE_SIZE * Config.extremeEvasionCooldownGuiScale));
         int left = (int) Math.round(event.getWindow().getGuiScaledWidth() * Config.extremeEvasionCooldownGuiRatioX)
-                - size - 8 + Config.extremeEvasionCooldownGuiOffsetX;
+                - size + Config.extremeEvasionCooldownGuiOffsetX;
         int top = (int) Math.round(event.getWindow().getGuiScaledHeight() * Config.extremeEvasionCooldownGuiRatioY)
-                - size - 8 + Config.extremeEvasionCooldownGuiOffsetY;
+                - size + Config.extremeEvasionCooldownGuiOffsetY;
         event.getGuiGraphics().blit(OUTER_RING, left + 1, top + 1, 0, 0, size - 2, size - 2, size - 2, size - 2);
         if (progress > 0.0F) {
             drawProgressRing(event, left, top, size, Math.round(SEGMENTS * progress));

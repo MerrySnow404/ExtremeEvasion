@@ -35,6 +35,10 @@ public final class Config {
             )
             .defineInRange("extremeEvasionCooldownTicks", 40, 0, 20 * 60);
 
+    private static final ForgeConfigSpec.BooleanValue ENABLE_EXTREME_EVASION_COOLDOWN_GUI = BUILDER
+            .comment("Whether to show the extreme evasion cooldown HUD.", "是否显示极限闪避冷却条 HUD。")
+            .define("enableExtremeEvasionCooldownGui", false);
+
     private static final ForgeConfigSpec.DoubleValue EXTREME_EVASION_COOLDOWN_GUI_SCALE = BUILDER
             .comment("Scale of the extreme evasion cooldown HUD ring.", "极限闪避冷却 HUD 圆环的缩放比例。")
             .defineInRange("extremeEvasionCooldownGuiScale", 1.0D, 0.25D, 4.0D);
@@ -49,11 +53,11 @@ public final class Config {
 
     private static final ForgeConfigSpec.IntValue EXTREME_EVASION_COOLDOWN_GUI_OFFSET_X = BUILDER
             .comment("Horizontal pixel offset from the default bottom-right HUD position; positive values move right.", "相对于 HUD 默认右下角位置的水平像素偏移；正值向右移动。")
-            .defineInRange("extremeEvasionCooldownGuiOffsetX", 0, -4096, 4096);
+            .defineInRange("extremeEvasionCooldownGuiOffsetX", -46, -4096, 4096);
 
     private static final ForgeConfigSpec.IntValue EXTREME_EVASION_COOLDOWN_GUI_OFFSET_Y = BUILDER
             .comment("Vertical pixel offset from the default bottom-right HUD position; positive values move down.", "相对于 HUD 默认右下角位置的垂直像素偏移；正值向下移动。")
-            .defineInRange("extremeEvasionCooldownGuiOffsetY", 0, -4096, 4096);
+            .defineInRange("extremeEvasionCooldownGuiOffsetY", -16, -4096, 4096);
 
     private static final ForgeConfigSpec.IntValue EXTREME_COUNTER_ATTACK_WINDOW_TICKS = BUILDER
             .comment(
@@ -192,6 +196,7 @@ public final class Config {
     public static int minimumExtremeEvasionWindowTicks;
     public static int maximumExtremeEvasionWindowTicks;
     public static int extremeEvasionCooldownTicks;
+    public static boolean enableExtremeEvasionCooldownGui;
     public static double extremeEvasionCooldownGuiScale;
     public static double extremeEvasionCooldownGuiRatioX;
     public static double extremeEvasionCooldownGuiRatioY;
@@ -225,6 +230,7 @@ public final class Config {
                 minimumExtremeEvasionWindowTicks
         );
         extremeEvasionCooldownTicks = EXTREME_EVASION_COOLDOWN_TICKS.get();
+        enableExtremeEvasionCooldownGui = ENABLE_EXTREME_EVASION_COOLDOWN_GUI.get();
         extremeEvasionCooldownGuiScale = EXTREME_EVASION_COOLDOWN_GUI_SCALE.get();
         extremeEvasionCooldownGuiRatioX = EXTREME_EVASION_COOLDOWN_GUI_RATIO_X.get();
         extremeEvasionCooldownGuiRatioY = EXTREME_EVASION_COOLDOWN_GUI_RATIO_Y.get();
