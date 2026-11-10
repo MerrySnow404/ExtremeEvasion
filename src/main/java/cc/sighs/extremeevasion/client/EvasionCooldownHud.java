@@ -36,6 +36,9 @@ public final class EvasionCooldownHud {
 
     @SubscribeEvent
     public static void onRenderOverlay(RenderGuiEvent.Post event) {
+        if (!Config.enableExtremeEvasionCooldownGui) {
+            return;
+        }
         float progress = EvasionCooldownClientState.getProgress();
         if (!EvasionCooldownClientState.isActive()) {
             return;

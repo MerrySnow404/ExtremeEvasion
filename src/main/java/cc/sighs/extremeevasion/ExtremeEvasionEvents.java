@@ -35,7 +35,7 @@ public final class ExtremeEvasionEvents {
             return;
         }
 
-        Player player = event.player;
+        Player player = event.getEntity();
         EvasionData data = getData(player);
         boolean rolling = RollCompat.isRolling(player);
         boolean active;

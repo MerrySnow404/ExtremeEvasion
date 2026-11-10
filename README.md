@@ -90,6 +90,14 @@ maximumExtremeEvasionWindowTicks = 20
 
 ```toml
 extremeEvasionCooldownTicks = 40
+enableExtremeEvasionCooldownGui = false
+```
+
+`enableExtremeEvasionCooldownGui` 控制是否显示极限闪避冷却条 HUD。
+
+冷却进度 HUD 的位置和大小也可配置：
+
+```toml
 extremeEvasionCooldownGuiScale = 1.0
 extremeEvasionCooldownGuiRatioX = 1.0
 extremeEvasionCooldownGuiRatioY = 1.0
