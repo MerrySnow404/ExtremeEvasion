@@ -8,6 +8,7 @@
     "EntityMixin",
     "EpicFightDodgeSkillMixin",
     "PlayerAttackStrengthMixin",
+    "PlayerDataMixin",
     "ServerLevelMixin",
     "UtilMixin"
   ],
