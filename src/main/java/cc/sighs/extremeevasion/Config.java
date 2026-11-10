@@ -69,7 +69,7 @@ public final class Config {
                     "Vertical pixel offset from the HUD anchor; positive values move down.",
                     "相对于 HUD 锚点的垂直像素偏移；正值向下移动。"
             )
-            .defineInRange("extremeEvasionCooldownGuiOffsetY", -16, -4096, 4096);
+            .defineInRange("extremeEvasionCooldownGuiOffsetY", -12, -4096, 4096);
 
     private static final ModConfigSpec.IntValue EXTREME_COUNTER_ATTACK_WINDOW_TICKS = BUILDER
             .comment(

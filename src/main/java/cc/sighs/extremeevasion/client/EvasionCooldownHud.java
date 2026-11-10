@@ -46,9 +46,9 @@ public final class EvasionCooldownHud {
 
         int size = Math.max(1, (int) Math.round(BASE_SIZE * Config.extremeEvasionCooldownGuiScale));
         int left = (int) Math.round(event.getGuiGraphics().guiWidth() * Config.extremeEvasionCooldownGuiRatioX)
-                - size - 8 + Config.extremeEvasionCooldownGuiOffsetX;
+                - size + Config.extremeEvasionCooldownGuiOffsetX;
         int top = (int) Math.round(event.getGuiGraphics().guiHeight() * Config.extremeEvasionCooldownGuiRatioY)
-                - size - 8 + Config.extremeEvasionCooldownGuiOffsetY;
+                - size + Config.extremeEvasionCooldownGuiOffsetY;
         event.getGuiGraphics().blit(
                 OUTER_RING,
                 left + 1,
