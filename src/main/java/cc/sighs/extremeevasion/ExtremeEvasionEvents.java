@@ -3,9 +3,9 @@ package cc.sighs.extremeevasion;
 import cc.sighs.extremeevasion.compat.roll.RollCompat;
 import cc.sighs.extremeevasion.event.ExtremeCounterAttackEvent;
 import cc.sighs.extremeevasion.event.ExtremeEvasionTriggeredEvent;
+import cc.sighs.extremeevasion.handler.EvasionData;
 import cc.sighs.extremeevasion.handler.TaCZHandler;
 import cc.sighs.extremeevasion.network.ExtremeEvasionNetwork;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.CombatRules;
@@ -29,65 +29,44 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 public final class ExtremeEvasionEvents {
-    private static final String DATA_ROOT = ExtremeEvasion.MODID;
-    private static final String DATA_ACTIVE = "extreme_window_active";
-    private static final String DATA_SUCCESS = "extreme_window_success";
-    private static final String DATA_BLOCKED = "extreme_window_blocked";
-    private static final String DATA_START_MIN_X = "extreme_window_start_min_x";
-    private static final String DATA_START_MIN_Y = "extreme_window_start_min_y";
-    private static final String DATA_START_MIN_Z = "extreme_window_start_min_z";
-    private static final String DATA_START_MAX_X = "extreme_window_start_max_x";
-    private static final String DATA_START_MAX_Y = "extreme_window_start_max_y";
-    private static final String DATA_START_MAX_Z = "extreme_window_start_max_z";
-    private static final String DATA_MIN_END_TICK = "extreme_window_min_end_tick";
-    private static final String DATA_MAX_END_TICK = "extreme_window_max_end_tick";
-    private static final String DATA_EVASION_COOLDOWN_TICKS_REMAINING = "extreme_evasion_cooldown_ticks_remaining";
-    private static final String DATA_ROLL_CONSUMED = "extreme_roll_consumed";
-    private static final String DATA_COUNTER_ATTACK_END_TICK = "extreme_counter_attack_end_tick";
-    private static final String DATA_COUNTER_ATTACK_ACTIVE = "extreme_counter_attack_active";
-    private static final String DATA_COUNTER_ATTACK_ACTIVE_TICK = "extreme_counter_attack_active_tick";
-    private static final String DATA_COUNTER_ATTACK_TARGET_UUID = "extreme_counter_attack_target_uuid";
-    private static final String DATA_COUNTER_ATTACK_CHARGES = "extreme_counter_attack_charges";
-    private static final String DATA_BULLET_TIME_INVULNERABLE_UNTIL = "bullet_time_invulnerable_until";
-
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
         if (event.getEntity().level().isClientSide()) {
             return;
         }
 
-        Player player = event.getEntity();
-        CompoundTag data = getData(player);
+        Player player = event.player;
+        EvasionData data = getData(player);
         boolean rolling = RollCompat.isRolling(player);
         boolean active;
         sanitizeLegacyState(player, data);
-        active = data.getBoolean(DATA_ACTIVE);
-        decrementRemainingTicks(data, DATA_MIN_END_TICK);
-        decrementRemainingTicks(data, DATA_MAX_END_TICK);
-        decrementRemainingTicks(data, DATA_COUNTER_ATTACK_END_TICK);
+        active = data.extremeEvasion$isWindowActive();
+        decrementRemainingTicks(data);
         clearExpiredCounterAttack(player, data);
         clearExpiredActiveCounterAttack(player, data);
         clearExpiredBulletTimeInvulnerability(data);
         consumeBlocked(player);
 
-        if (data.contains(DATA_EVASION_COOLDOWN_TICKS_REMAINING)) {
-            int remainingTicks = data.getInt(DATA_EVASION_COOLDOWN_TICKS_REMAINING);
-            if (remainingTicks > 0) {
-                data.putInt(DATA_EVASION_COOLDOWN_TICKS_REMAINING, remainingTicks - 1);
+        int remainingTicks = data.extremeEvasion$getEvasionCooldownTicksRemaining();
+        if (remainingTicks > 0) {
+            remainingTicks -= 1;
+            data.extremeEvasion$setEvasionCooldownTicksRemaining(remainingTicks);
+            if (remainingTicks == 0
+                    && player instanceof ServerPlayer serverPlayer) {
+                ExtremeEvasionNetwork.sendEvasionCooldown(serverPlayer, 0);
             }
-            if (!isExtremeEvasionOnCooldown(player, data)) {
-                data.remove(DATA_EVASION_COOLDOWN_TICKS_REMAINING);
-                if (player instanceof ServerPlayer serverPlayer) {
-                    ExtremeEvasionNetwork.sendEvasionCooldown(serverPlayer, 0);
-                }
+        } else if (remainingTicks == -1) {
+            data.extremeEvasion$setEvasionCooldownTicksRemaining(0);
+            if (player instanceof ServerPlayer serverPlayer) {
+                ExtremeEvasionNetwork.sendEvasionCooldown(serverPlayer, 0);
             }
         }
 
         if (!rolling) {
-            data.remove(DATA_ROLL_CONSUMED);
+            data.extremeEvasion$setRollConsumed(false);
         }
 
-        if (data.getBoolean(DATA_ROLL_CONSUMED)) {
+        if (data.extremeEvasion$isRollConsumed()) {
             if (active) {
                 endWindow(data);
             }
@@ -103,7 +82,7 @@ public final class ExtremeEvasionEvents {
             return;
         }
 
-        if (!isExtremeEvasionWindowOpen(player, data) || data.getBoolean(DATA_SUCCESS)) {
+        if (!isExtremeEvasionWindowOpen(player, data) || data.extremeEvasion$isWindowSuccess()) {
             endWindow(data);
         }
     }
@@ -153,7 +132,7 @@ public final class ExtremeEvasionEvents {
             return;
         }
 
-        CompoundTag data = getData(player);
+        EvasionData data = getData(player);
         clearActiveCounterAttack(data);
         if (!hasCounterAttack(player, data)) {
             return;
@@ -162,16 +141,16 @@ public final class ExtremeEvasionEvents {
         ExtremeCounterAttackEvent counterAttackEvent = new ExtremeCounterAttackEvent(
                 serverPlayer,
                 event.getTarget(),
-                data.getInt(DATA_COUNTER_ATTACK_CHARGES)
+                data.extremeEvasion$getCounterAttackCharges()
         );
         NeoForge.EVENT_BUS.post(counterAttackEvent);
         if (counterAttackEvent.isCanceled()) {
             return;
         }
 
-        data.putBoolean(DATA_COUNTER_ATTACK_ACTIVE, true);
-        data.putBoolean(DATA_COUNTER_ATTACK_ACTIVE_TICK, true);
-        data.putUUID(DATA_COUNTER_ATTACK_TARGET_UUID, event.getTarget().getUUID());
+        data.extremeEvasion$setCounterAttackActive(true);
+        data.extremeEvasion$setCounterAttackActiveTick(true);
+        data.extremeEvasion$setCounterAttackTargetUuid(event.getTarget().getUUID());
         consumeCounterAttack(data);
     }
 
@@ -182,8 +161,8 @@ public final class ExtremeEvasionEvents {
             return;
         }
 
-        CompoundTag data = getData(player);
-        if (!data.getBoolean(DATA_COUNTER_ATTACK_ACTIVE)) {
+        EvasionData data = getData(player);
+        if (!data.extremeEvasion$isCounterAttackActive()) {
             return;
         }
 
@@ -199,18 +178,18 @@ public final class ExtremeEvasionEvents {
             return;
         }
 
-        CompoundTag data = getData(player);
+        EvasionData data = getData(player);
         boolean activatedByDamageType = false;
-        if (!data.getBoolean(DATA_COUNTER_ATTACK_ACTIVE)
+        if (!data.extremeEvasion$isCounterAttackActive()
                 && hasCounterAttack(player, data)
                 && Config.EXTREME_COUNTER_ATTACK_DAMAGE_TYPES.contains(event.getSource().type())) {
-            data.putBoolean(DATA_COUNTER_ATTACK_ACTIVE, true);
-            data.putBoolean(DATA_COUNTER_ATTACK_ACTIVE_TICK, true);
-            data.putUUID(DATA_COUNTER_ATTACK_TARGET_UUID, event.getEntity().getUUID());
+            data.extremeEvasion$setCounterAttackActive(true);
+            data.extremeEvasion$setCounterAttackActiveTick(true);
+            data.extremeEvasion$setCounterAttackTargetUuid(event.getEntity().getUUID());
             consumeCounterAttack(data);
             activatedByDamageType = true;
         }
-        if (!data.getBoolean(DATA_COUNTER_ATTACK_ACTIVE) || !isActiveCounterAttackTarget(event.getEntity(), data)) {
+        if (!data.extremeEvasion$isCounterAttackActive() || !isActiveCounterAttackTarget(event.getEntity(), data)) {
             return;
         }
 
@@ -243,64 +222,54 @@ public final class ExtremeEvasionEvents {
         return ModList.get().isLoaded("tacz") && source.is(TaCZHandler.BULLETS_TAG);
     }
 
-    private static void startWindow(Player player, CompoundTag data) {
+    private static void startWindow(Player player, EvasionData data) {
         if (!(player instanceof ServerPlayer) || isExtremeEvasionOnCooldown(player, data)) {
             return;
         }
 
         var aabb = player.getBoundingBox();
-        data.putBoolean(DATA_ACTIVE, true);
-        data.putBoolean(DATA_SUCCESS, false);
-        data.putDouble(DATA_START_MIN_X, aabb.minX);
-        data.putDouble(DATA_START_MIN_Y, aabb.minY);
-        data.putDouble(DATA_START_MIN_Z, aabb.minZ);
-        data.putDouble(DATA_START_MAX_X, aabb.maxX);
-        data.putDouble(DATA_START_MAX_Y, aabb.maxY);
-        data.putDouble(DATA_START_MAX_Z, aabb.maxZ);
-        data.putLong(DATA_MIN_END_TICK, Config.minimumExtremeEvasionWindowTicks);
-        data.putLong(DATA_MAX_END_TICK, Config.maximumExtremeEvasionWindowTicks);
+        data.extremeEvasion$setWindowActive(true);
+        data.extremeEvasion$setWindowSuccess(false);
+        data.extremeEvasion$setStartMinX(aabb.minX);
+        data.extremeEvasion$setStartMinY(aabb.minY);
+        data.extremeEvasion$setStartMinZ(aabb.minZ);
+        data.extremeEvasion$setStartMaxX(aabb.maxX);
+        data.extremeEvasion$setStartMaxY(aabb.maxY);
+        data.extremeEvasion$setStartMaxZ(aabb.maxZ);
+        data.extremeEvasion$setMinEndTicks(Config.minimumExtremeEvasionWindowTicks);
+        data.extremeEvasion$setMaxEndTicks(Config.maximumExtremeEvasionWindowTicks);
     }
 
-    private static void endWindow(CompoundTag data) {
+    private static void endWindow(EvasionData data) {
         clearWindow(data);
     }
 
-    private static void clearWindow(CompoundTag data) {
-        data.remove(DATA_ACTIVE);
-        data.remove(DATA_SUCCESS);
-        data.remove(DATA_START_MIN_X);
-        data.remove(DATA_START_MIN_Y);
-        data.remove(DATA_START_MIN_Z);
-        data.remove(DATA_START_MAX_X);
-        data.remove(DATA_START_MAX_Y);
-        data.remove(DATA_START_MAX_Z);
-        data.remove(DATA_MIN_END_TICK);
-        data.remove(DATA_MAX_END_TICK);
+    private static void clearWindow(EvasionData data) {
+        data.extremeEvasion$setWindowActive(false);
+        data.extremeEvasion$setWindowSuccess(false);
+        data.extremeEvasion$setMinEndTicks(0);
+        data.extremeEvasion$setMaxEndTicks(0);
     }
 
     private static void setBlocked(Player player) {
         var data = getData(player);
-        data.putBoolean(DATA_BLOCKED, true);
+        data.extremeEvasion$setWindowBlocked(true);
     }
 
     private static boolean consumeBlocked(Player player) {
         var data = getData(player);
-        if (!data.getBoolean(DATA_BLOCKED)) return false;
+        if (!data.extremeEvasion$isWindowBlocked()) return false;
 
-        data.remove(DATA_BLOCKED);
+        data.extremeEvasion$setWindowBlocked(false);
         return true;
     }
 
-    private static CompoundTag getData(Player player) {
-        CompoundTag persistentData = player.getPersistentData();
-        if (!persistentData.contains(DATA_ROOT, CompoundTag.TAG_COMPOUND)) {
-            persistentData.put(DATA_ROOT, new CompoundTag());
-        }
-        return persistentData.getCompound(DATA_ROOT);
+    private static EvasionData getData(Player player) {
+        return (EvasionData) player;
     }
 
     public static boolean hasActiveExtremeEvasionWindow(Player player) {
-        CompoundTag data = getData(player);
+        EvasionData data = getData(player);
         return isWindowArmed(data) && isExtremeEvasionWindowOpen(player, data);
     }
 
@@ -309,9 +278,9 @@ public final class ExtremeEvasionEvents {
             return;
         }
 
-        CompoundTag data = getData(player);
+        EvasionData data = getData(player);
         sanitizeLegacyState(player, data);
-        if (data.getBoolean(DATA_ROLL_CONSUMED) || data.getBoolean(DATA_ACTIVE)) {
+        if (data.extremeEvasion$isRollConsumed() || data.extremeEvasion$isWindowActive()) {
             return;
         }
 
@@ -319,19 +288,15 @@ public final class ExtremeEvasionEvents {
     }
 
     public static AABB getExtremeEvasionStartAABB(Player player) {
-        CompoundTag data = getData(player);
+        EvasionData data = getData(player);
         return new AABB(
-                data.getDouble(DATA_START_MIN_X),
-                data.getDouble(DATA_START_MIN_Y),
-                data.getDouble(DATA_START_MIN_Z),
-                data.getDouble(DATA_START_MAX_X),
-                data.getDouble(DATA_START_MAX_Y),
-                data.getDouble(DATA_START_MAX_Z)
+                data.extremeEvasion$getStartMinX(), data.extremeEvasion$getStartMinY(), data.extremeEvasion$getStartMinZ(),
+                data.extremeEvasion$getStartMaxX(), data.extremeEvasion$getStartMaxY(), data.extremeEvasion$getStartMaxZ()
         );
     }
 
     public static boolean tryTriggerExtremeEvasion(ServerPlayer player, DamageSource damageSource) {
-        CompoundTag data = getData(player);
+        EvasionData data = getData(player);
         if (isExtremeEvasionOnCooldown(player, data)
                 || !isWindowArmed(data)
                 || !isExtremeEvasionWindowOpen(player, data)
@@ -347,12 +312,9 @@ public final class ExtremeEvasionEvents {
         }
 
         clearWindow(data);
-        data.putBoolean(DATA_ROLL_CONSUMED, true);
+        data.extremeEvasion$setRollConsumed(true);
         if (Config.extremeEvasionCooldownTicks > 0) {
-            data.putLong(
-                    DATA_EVASION_COOLDOWN_TICKS_REMAINING,
-                    Config.extremeEvasionCooldownTicks
-            );
+            data.extremeEvasion$setEvasionCooldownTicksRemaining(Config.extremeEvasionCooldownTicks);
             ExtremeEvasionNetwork.sendEvasionCooldown(player, Config.extremeEvasionCooldownTicks);
         }
         grantCounterAttack(player, data);
@@ -376,8 +338,8 @@ public final class ExtremeEvasionEvents {
         return true;
     }
 
-    private static boolean isExtremeEvasionOnCooldown(Player player, CompoundTag data) {
-        return data.getInt(DATA_EVASION_COOLDOWN_TICKS_REMAINING) > 0;
+    private static boolean isExtremeEvasionOnCooldown(Player player, EvasionData data) {
+        return data.extremeEvasion$getEvasionCooldownTicksRemaining() > 0;
     }
 
     private static boolean canTriggerBulletTime(ServerPlayer player) {
@@ -387,16 +349,13 @@ public final class ExtremeEvasionEvents {
                 || (player.getServer().isSingleplayer() && !player.getServer().isPublished()));
     }
 
-    private static void grantBulletTimeInvulnerability(CompoundTag data) {
+    private static void grantBulletTimeInvulnerability(EvasionData data) {
         if (!Config.enableBulletTimeInvulnerability || Config.bulletTimeDurationMillis <= 0) {
-            data.remove(DATA_BULLET_TIME_INVULNERABLE_UNTIL);
+            data.extremeEvasion$setBulletTimeInvulnerableUntil(0);
             return;
         }
 
-        data.putLong(
-                DATA_BULLET_TIME_INVULNERABLE_UNTIL,
-                BulletTimeController.monotonicMillis() + Config.bulletTimeDurationMillis
-        );
+        data.extremeEvasion$setBulletTimeInvulnerableUntil(BulletTimeController.monotonicMillis() + Config.bulletTimeDurationMillis);
     }
 
     private static boolean isBulletTimeInvulnerable(ServerPlayer player) {
@@ -404,66 +363,64 @@ public final class ExtremeEvasionEvents {
             return false;
         }
 
-        CompoundTag data = getData(player);
-        if (!data.contains(DATA_BULLET_TIME_INVULNERABLE_UNTIL)) {
+        EvasionData data = getData(player);
+        if (data.extremeEvasion$getBulletTimeInvulnerableUntil() <= 0) {
             return false;
         }
 
-        if (BulletTimeController.monotonicMillis() <= data.getLong(DATA_BULLET_TIME_INVULNERABLE_UNTIL)) {
+        if (BulletTimeController.monotonicMillis() <= data.extremeEvasion$getBulletTimeInvulnerableUntil()) {
             return true;
         }
 
-        data.remove(DATA_BULLET_TIME_INVULNERABLE_UNTIL);
+        data.extremeEvasion$setBulletTimeInvulnerableUntil(0);
         return false;
     }
 
-    private static void clearExpiredBulletTimeInvulnerability(CompoundTag data) {
-        if (data.contains(DATA_BULLET_TIME_INVULNERABLE_UNTIL)
-                && BulletTimeController.monotonicMillis() > data.getLong(DATA_BULLET_TIME_INVULNERABLE_UNTIL)) {
-            data.remove(DATA_BULLET_TIME_INVULNERABLE_UNTIL);
+    private static void clearExpiredBulletTimeInvulnerability(EvasionData data) {
+        if (data.extremeEvasion$getBulletTimeInvulnerableUntil() > 0
+                && BulletTimeController.monotonicMillis() > data.extremeEvasion$getBulletTimeInvulnerableUntil()) {
+            data.extremeEvasion$setBulletTimeInvulnerableUntil(0);
         }
     }
 
-    private static boolean isWindowArmed(CompoundTag data) {
-        return data.getBoolean(DATA_ACTIVE) && !data.getBoolean(DATA_SUCCESS);
+    private static boolean isWindowArmed(EvasionData data) {
+        return data.extremeEvasion$isWindowActive() && !data.extremeEvasion$isWindowSuccess();
     }
 
-    private static void sanitizeLegacyState(Player player, CompoundTag data) {
-        if (data.getBoolean(DATA_ACTIVE)
-                && (!data.contains(DATA_MIN_END_TICK)
-                || !data.contains(DATA_MAX_END_TICK)
+    private static void sanitizeLegacyState(Player player, EvasionData data) {
+        if (data.extremeEvasion$isWindowActive()
+                && (data.extremeEvasion$getMinEndTicks() <= 0
+                || data.extremeEvasion$getMaxEndTicks() <= 0
                 || !isExtremeEvasionWindowOpen(player, data))) {
             clearWindow(data);
         }
 
-        if (!data.contains(DATA_BULLET_TIME_INVULNERABLE_UNTIL)) {
+        if (data.extremeEvasion$getBulletTimeInvulnerableUntil() <= 0) {
             return;
         }
 
         long now = BulletTimeController.monotonicMillis();
-        long invulnerableUntil = data.getLong(DATA_BULLET_TIME_INVULNERABLE_UNTIL);
+        long invulnerableUntil = data.extremeEvasion$getBulletTimeInvulnerableUntil();
         long maxExpectedRemainingMillis = Math.max(Config.bulletTimeDurationMillis + 1000L, 5000L);
         if (invulnerableUntil <= now || invulnerableUntil > now + maxExpectedRemainingMillis) {
-            data.remove(DATA_BULLET_TIME_INVULNERABLE_UNTIL);
+            data.extremeEvasion$setBulletTimeInvulnerableUntil(0);
         }
     }
 
-    private static boolean isMinimumWindowActive(Player player, CompoundTag data) {
-        return data.contains(DATA_MIN_END_TICK)
-                && data.getLong(DATA_MIN_END_TICK) > 0;
+    private static boolean isMinimumWindowActive(Player player, EvasionData data) {
+        return data.extremeEvasion$getMinEndTicks() > 0;
     }
 
-    private static boolean isMaximumWindowActive(Player player, CompoundTag data) {
-        return data.contains(DATA_MAX_END_TICK)
-                && data.getLong(DATA_MAX_END_TICK) > 0;
+    private static boolean isMaximumWindowActive(Player player, EvasionData data) {
+        return data.extremeEvasion$getMaxEndTicks() > 0;
     }
 
-    private static boolean isExtremeEvasionWindowOpen(Player player, CompoundTag data) {
+    private static boolean isExtremeEvasionWindowOpen(Player player, EvasionData data) {
         return isMaximumWindowActive(player, data)
                 && (isMinimumWindowActive(player, data) || RollCompat.isRolling(player));
     }
 
-    private static void grantCounterAttack(ServerPlayer player, CompoundTag data) {
+    private static void grantCounterAttack(ServerPlayer player, EvasionData data) {
         int windowTicks = Config.extremeCounterAttackWindowTicks;
         int charges = Config.extremeCounterAttackCharges;
         if (windowTicks <= 0 || charges <= 0) {
@@ -472,8 +429,8 @@ public final class ExtremeEvasionEvents {
             return;
         }
 
-        data.putLong(DATA_COUNTER_ATTACK_END_TICK, windowTicks);
-        data.putInt(DATA_COUNTER_ATTACK_CHARGES, charges);
+        data.extremeEvasion$setCounterAttackEndTicks(windowTicks);
+        data.extremeEvasion$setCounterAttackCharges(charges);
         clearActiveCounterAttack(data);
         ExtremeEvasionNetwork.sendCounterAttack(player, true);
     }
@@ -482,15 +439,12 @@ public final class ExtremeEvasionEvents {
         return hasCounterAttack(player, getData(player));
     }
 
-    private static boolean hasCounterAttack(Player player, CompoundTag data) {
-        return data.contains(DATA_COUNTER_ATTACK_END_TICK)
-                && data.getLong(DATA_COUNTER_ATTACK_END_TICK) > 0
-                && data.getInt(DATA_COUNTER_ATTACK_CHARGES) > 0;
+    private static boolean hasCounterAttack(Player player, EvasionData data) {
+        return data.extremeEvasion$getCounterAttackEndTicks() > 0 && data.extremeEvasion$getCounterAttackCharges() > 0;
     }
 
-    private static void clearExpiredCounterAttack(Player player, CompoundTag data) {
-        if (data.contains(DATA_COUNTER_ATTACK_END_TICK)
-                && data.getLong(DATA_COUNTER_ATTACK_END_TICK) <= 0) {
+    private static void clearExpiredCounterAttack(Player player, EvasionData data) {
+        if (data.extremeEvasion$getCounterAttackEndTicks() <= 0 && data.extremeEvasion$getCounterAttackCharges() > 0) {
             clearCounterAttack(data);
             if (player instanceof ServerPlayer serverPlayer) {
                 ExtremeEvasionNetwork.sendCounterAttack(serverPlayer, false);
@@ -498,8 +452,8 @@ public final class ExtremeEvasionEvents {
         }
     }
 
-    private static void clearExpiredActiveCounterAttack(Player player, CompoundTag data) {
-        if (!data.getBoolean(DATA_COUNTER_ATTACK_ACTIVE) || data.getBoolean(DATA_COUNTER_ATTACK_ACTIVE_TICK)) {
+    private static void clearExpiredActiveCounterAttack(Player player, EvasionData data) {
+        if (!data.extremeEvasion$isCounterAttackActive() || data.extremeEvasion$isCounterAttackActiveTick()) {
             clearActiveCounterAttack(data);
             if (!hasCounterAttack(player, data) && player instanceof ServerPlayer serverPlayer) {
                 ExtremeEvasionNetwork.sendCounterAttack(serverPlayer, false);
@@ -507,42 +461,40 @@ public final class ExtremeEvasionEvents {
         }
     }
 
-    private static void consumeCounterAttack(CompoundTag data) {
-        int remainingCharges = data.getInt(DATA_COUNTER_ATTACK_CHARGES) - 1;
+    private static void consumeCounterAttack(EvasionData data) {
+        int remainingCharges = data.extremeEvasion$getCounterAttackCharges() - 1;
         if (remainingCharges <= 0) {
-            data.remove(DATA_COUNTER_ATTACK_END_TICK);
-            data.remove(DATA_COUNTER_ATTACK_CHARGES);
+            data.extremeEvasion$setCounterAttackEndTicks(0);
+            data.extremeEvasion$setCounterAttackCharges(0);
         } else {
-            data.putInt(DATA_COUNTER_ATTACK_CHARGES, remainingCharges);
+            data.extremeEvasion$setCounterAttackCharges(remainingCharges);
         }
     }
 
-    private static boolean isActiveCounterAttackTarget(Entity target, CompoundTag data) {
-        return data.hasUUID(DATA_COUNTER_ATTACK_TARGET_UUID)
-                && target.getUUID().equals(data.getUUID(DATA_COUNTER_ATTACK_TARGET_UUID));
+    private static boolean isActiveCounterAttackTarget(Entity target, EvasionData data) {
+        return data.extremeEvasion$getCounterAttackTargetUuid() != null
+                && target.getUUID().equals(data.extremeEvasion$getCounterAttackTargetUuid());
     }
 
-    private static void clearCounterAttack(CompoundTag data) {
-        data.remove(DATA_COUNTER_ATTACK_END_TICK);
-        data.remove(DATA_COUNTER_ATTACK_CHARGES);
+    private static void clearCounterAttack(EvasionData data) {
+        data.extremeEvasion$setCounterAttackEndTicks(0);
+        data.extremeEvasion$setCounterAttackCharges(0);
         clearActiveCounterAttack(data);
     }
 
-    private static void clearActiveCounterAttack(CompoundTag data) {
-        data.remove(DATA_COUNTER_ATTACK_ACTIVE);
-        data.remove(DATA_COUNTER_ATTACK_ACTIVE_TICK);
-        data.remove(DATA_COUNTER_ATTACK_TARGET_UUID);
+    private static void clearActiveCounterAttack(EvasionData data) {
+        data.extremeEvasion$setCounterAttackActive(false);
+        data.extremeEvasion$setCounterAttackActiveTick(false);
+        data.extremeEvasion$setCounterAttackTargetUuid(null);
     }
 
-    private static void decrementRemainingTicks(CompoundTag data, String key) {
-        if (!data.contains(key)) {
-            return;
-        }
-
-        long remainingTicks = data.getLong(key);
-        if (remainingTicks > 0) {
-            data.putLong(key, remainingTicks - 1);
-        }
+    private static void decrementRemainingTicks(EvasionData data) {
+        if (data.extremeEvasion$getMinEndTicks() > 0)
+            data.extremeEvasion$setMinEndTicks(data.extremeEvasion$getMinEndTicks() - 1);
+        if (data.extremeEvasion$getMaxEndTicks() > 0)
+            data.extremeEvasion$setMaxEndTicks(data.extremeEvasion$getMaxEndTicks() - 1);
+        if (data.extremeEvasion$getCounterAttackEndTicks() > 0)
+            data.extremeEvasion$setCounterAttackEndTicks(data.extremeEvasion$getCounterAttackEndTicks() - 1);
     }
 
     private static float getArmorPiercingHurtAmount(LivingEntity target, DamageSource damageSource, float desiredAfterArmor) {
