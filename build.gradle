@@ -191,6 +191,7 @@ dependencies {
     implementation fg.deobf("curse.maven:timescalelib-1542930:8670577")
 
     implementation fg.deobf("curse.maven:timeless-and-classics-zero-1028108:9037989")
+    implementation fg.deobf("curse.maven:customnpcs-unofficial-1052708:8414335")
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

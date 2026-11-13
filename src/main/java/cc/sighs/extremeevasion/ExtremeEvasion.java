@@ -2,6 +2,7 @@ package cc.sighs.extremeevasion;
 
 import cc.sighs.extremeevasion.client.CounterAttackGoldRenderType;
 import cc.sighs.extremeevasion.compat.roll.RollCompat;
+import cc.sighs.extremeevasion.handler.NPCHandler;
 import cc.sighs.extremeevasion.handler.TaCZHandler;
 import cc.sighs.extremeevasion.network.ExtremeEvasionNetwork;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -43,9 +44,13 @@ public class ExtremeEvasion {
 
         // Register our mod's ForgeConfigSpec so that Forge can create and load the config file for us
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
-        if (!ModList.get().isLoaded("tacz")) return;
-
-        MinecraftForge.EVENT_BUS.register(TaCZHandler.class);
+        var modList = ModList.get();
+        if (modList.isLoaded("tacz")) {
+            MinecraftForge.EVENT_BUS.register(TaCZHandler.class);
+        }
+        if (modList.isLoaded("customnpcs")) {
+            MinecraftForge.EVENT_BUS.register(NPCHandler.class);
+        }
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

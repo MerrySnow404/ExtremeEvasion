@@ -20,6 +20,9 @@ public class TaCZHandler {
         if (!(hurtEntity instanceof Player player) || !ExtremeEvasionEvents.hasActiveExtremeEvasionWindow(player))
             return;
 
-        ExtremeEvasionEvents.tryTriggerExtremeEvasion((ServerPlayer) player, event.getDamageSource(GunDamageSourcePart.NON_ARMOR_PIERCING));
+        var source = event.getDamageSource(GunDamageSourcePart.NON_ARMOR_PIERCING);
+        if (ExtremeEvasionEvents.tryTriggerExtremeEvasion((ServerPlayer) player, source)) {
+            event.setCanceled(true);
+        }
     }
 }

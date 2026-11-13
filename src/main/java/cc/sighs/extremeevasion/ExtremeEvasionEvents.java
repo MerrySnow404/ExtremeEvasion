@@ -124,7 +124,9 @@ public final class ExtremeEvasionEvents {
         var projectile = event.getProjectile();
         var owner = projectile.getOwner();
         var living = owner instanceof LivingEntity ? (LivingEntity) owner : null;
-        tryTriggerExtremeEvasion((ServerPlayer) player, projectile.damageSources().mobProjectile(projectile, living));
+        if (tryTriggerExtremeEvasion((ServerPlayer) player, projectile.damageSources().mobProjectile(projectile, living))) {
+            event.setCanceled(true);
+        }
     }
 
     @SubscribeEvent
