@@ -62,7 +62,7 @@ public final class Config {
                     "Horizontal pixel offset from the HUD anchor; positive values move right.",
                     "相对于 HUD 锚点的水平像素偏移；正值向右移动。"
             )
-            .defineInRange("extremeEvasionCooldownGuiOffsetX", -46, -4096, 4096);
+            .defineInRange("extremeEvasionCooldownGuiOffsetX", -10, -4096, 4096);
 
     private static final ModConfigSpec.IntValue EXTREME_EVASION_COOLDOWN_GUI_OFFSET_Y = BUILDER
             .comment(

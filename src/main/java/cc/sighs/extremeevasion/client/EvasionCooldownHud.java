@@ -16,7 +16,6 @@ import org.joml.Matrix4f;
 public final class EvasionCooldownHud {
     private static final int SEGMENTS = 64;
     private static final int BASE_SIZE = 32;
-    private static final int TEXTURE_SIZE = 64;
     private static final ResourceLocation OUTER_RING = ResourceLocation.fromNamespaceAndPath(
             ExtremeEvasion.MODID,
             "textures/gui/outer_ring.png"
@@ -51,14 +50,14 @@ public final class EvasionCooldownHud {
                 - size + Config.extremeEvasionCooldownGuiOffsetY;
         event.getGuiGraphics().blit(
                 OUTER_RING,
-                left + 1,
-                top + 1,
+                left,
+                top,
                 0,
                 0,
-                size - 2,
-                size - 2,
-                size - 2,
-                size - 2
+                size,
+                size,
+                size,
+                size
         );
         if (progress > 0.0F) {
             drawProgressRing(event, left, top, size, Math.round(SEGMENTS * progress));
@@ -78,16 +77,15 @@ public final class EvasionCooldownHud {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         Matrix4f pose = event.getGuiGraphics().pose().last().pose();
         BufferBuilder builder = Tesselator.getInstance().begin(
-                VertexFormat.Mode.QUADS,
+                VertexFormat.Mode.TRIANGLES,
                 DefaultVertexFormat.POSITION_TEX
         );
         for (int segment = 0; segment < segments; segment++) {
             double startAngle = -Math.PI / 2.0 + Math.PI * 2.0 * segment / SEGMENTS;
             double endAngle = -Math.PI / 2.0 + Math.PI * 2.0 * (segment + 1) / SEGMENTS;
-            addRingVertex(builder, pose, left, top, size, 0.28, startAngle);
-            addRingVertex(builder, pose, left, top, size, 0.46, startAngle);
-            addRingVertex(builder, pose, left, top, size, 0.46, endAngle);
-            addRingVertex(builder, pose, left, top, size, 0.28, endAngle);
+            builder.addVertex(pose, left + size * 0.5F, top + size * 0.5F, 0).setUv(0.5F, 0.5F);
+            addRingVertex(builder, pose, left, top, size, startAngle);
+            addRingVertex(builder, pose, left, top, size, endAngle);
         }
         BufferUploader.drawWithShader(builder.buildOrThrow());
         RenderSystem.enableCull();
@@ -100,9 +98,10 @@ public final class EvasionCooldownHud {
             int left,
             int top,
             int size,
-            double radius,
             double angle
     ) {
+        // Cover the texture square; its alpha channel defines both ring edges.
+        double radius = 0.5 / Math.max(Math.abs(Math.cos(angle)), Math.abs(Math.sin(angle)));
         float normalizedX = (float) (0.5 + Math.cos(angle) * radius);
         float normalizedY = (float) (0.5 + Math.sin(angle) * radius);
         float x = left + normalizedX * size;
