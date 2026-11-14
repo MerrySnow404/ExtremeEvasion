@@ -53,7 +53,7 @@ public final class Config {
 
     private static final ForgeConfigSpec.IntValue EXTREME_EVASION_COOLDOWN_GUI_OFFSET_X = BUILDER
             .comment("Horizontal pixel offset from the default bottom-right HUD position; positive values move right.", "相对于 HUD 默认右下角位置的水平像素偏移；正值向右移动。")
-            .defineInRange("extremeEvasionCooldownGuiOffsetX", -46, -4096, 4096);
+            .defineInRange("extremeEvasionCooldownGuiOffsetX", -10, -4096, 4096);
 
     private static final ForgeConfigSpec.IntValue EXTREME_EVASION_COOLDOWN_GUI_OFFSET_Y = BUILDER
             .comment("Vertical pixel offset from the default bottom-right HUD position; positive values move down.", "相对于 HUD 默认右下角位置的垂直像素偏移；正值向下移动。")

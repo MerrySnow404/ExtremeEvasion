@@ -16,7 +16,6 @@ import org.joml.Matrix4f;
 public final class EvasionCooldownHud {
     private static final int SEGMENTS = 64;
     private static final int BASE_SIZE = 32;
-    private static final int TEXTURE_SIZE = 64;
     private static final ResourceLocation OUTER_RING = new ResourceLocation(ExtremeEvasion.MODID, "textures/gui/outer_ring.png");
     private static final ResourceLocation INNER_RING = new ResourceLocation(ExtremeEvasion.MODID, "textures/gui/inner_ring.png");
 
@@ -36,7 +35,7 @@ public final class EvasionCooldownHud {
                 - size + Config.extremeEvasionCooldownGuiOffsetX;
         int top = (int) Math.round(event.getWindow().getGuiScaledHeight() * Config.extremeEvasionCooldownGuiRatioY)
                 - size + Config.extremeEvasionCooldownGuiOffsetY;
-        event.getGuiGraphics().blit(OUTER_RING, left + 1, top + 1, 0, 0, size - 2, size - 2, size - 2, size - 2);
+        event.getGuiGraphics().blit(OUTER_RING, left, top, 0, 0, size, size, size, size);
         if (progress > 0.0F) {
             drawProgressRing(event, left, top, size, Math.round(SEGMENTS * progress));
         }
@@ -55,21 +54,22 @@ public final class EvasionCooldownHud {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         Matrix4f pose = event.getGuiGraphics().pose().last().pose();
         BufferBuilder builder = Tesselator.getInstance().getBuilder();
-        builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        builder.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_TEX);
         for (int segment = 0; segment < segments; segment++) {
             double startAngle = -Math.PI / 2.0 + Math.PI * 2.0 * segment / SEGMENTS;
             double endAngle = -Math.PI / 2.0 + Math.PI * 2.0 * (segment + 1) / SEGMENTS;
-            addRingVertex(builder, pose, left, top, size, 0.28, startAngle);
-            addRingVertex(builder, pose, left, top, size, 0.46, startAngle);
-            addRingVertex(builder, pose, left, top, size, 0.46, endAngle);
-            addRingVertex(builder, pose, left, top, size, 0.28, endAngle);
+            builder.vertex(pose, left + size * 0.5F, top + size * 0.5F, 0).uv(0.5F, 0.5F).endVertex();
+            addRingVertex(builder, pose, left, top, size, startAngle);
+            addRingVertex(builder, pose, left, top, size, endAngle);
         }
         BufferUploader.drawWithShader(builder.end());
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
     }
 
-    private static void addRingVertex(BufferBuilder builder, Matrix4f pose, int left, int top, int size, double radius, double angle) {
+    private static void addRingVertex(BufferBuilder builder, Matrix4f pose, int left, int top, int size, double angle) {
+        // Cover the texture square; its alpha channel defines both ring edges.
+        double radius = 0.5 / Math.max(Math.abs(Math.cos(angle)), Math.abs(Math.sin(angle)));
         float normalizedX = (float) (0.5 + Math.cos(angle) * radius);
         float normalizedY = (float) (0.5 + Math.sin(angle) * radius);
         float x = left + normalizedX * size;
