@@ -8,11 +8,12 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
 import noppes.npcs.NpcDamageSource;
 import noppes.npcs.api.event.NpcEvent;
+import noppes.npcs.api.wrapper.WrapperNpcAPI;
 
 public class NPCHandler {
     @SubscribeEvent
     public static void onNpcMeleeAttack(NpcEvent.MeleeAttackEvent event) {
-        var target = event.target;
+        var target = event.target.getMCEntity();
         if (!(target instanceof Player player) || !ExtremeEvasionEvents.hasActiveExtremeEvasionWindow(player))
             return;
 
@@ -21,5 +22,9 @@ public class NPCHandler {
         if (ExtremeEvasionEvents.tryTriggerExtremeEvasion((ServerPlayer) player, new DamageSource(damageTypeHolder, npc))) {
             event.setCanceled(true);
         }
+    }
+
+    public static void register() {
+        WrapperNpcAPI.EVENT_BUS.register(NPCHandler.class);
     }
 }

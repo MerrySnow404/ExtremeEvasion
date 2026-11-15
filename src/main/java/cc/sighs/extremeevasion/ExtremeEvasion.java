@@ -53,7 +53,7 @@ public class ExtremeEvasion {
             NeoForge.EVENT_BUS.register(TaCZHandler.class);
         }
         if (modList.isLoaded("customnpcs")) {
-            NeoForge.EVENT_BUS.register(NPCHandler.class);
+            NPCHandler.register();
         }
     }
 
