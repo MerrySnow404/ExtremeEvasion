@@ -49,7 +49,7 @@ public class ExtremeEvasion {
             MinecraftForge.EVENT_BUS.register(TaCZHandler.class);
         }
         if (modList.isLoaded("customnpcs")) {
-            MinecraftForge.EVENT_BUS.register(NPCHandler.class);
+            NPCHandler.register();
         }
     }
 

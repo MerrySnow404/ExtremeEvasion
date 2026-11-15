@@ -4,6 +4,7 @@ import cc.sighs.extremeevasion.compat.roll.RollCompat;
 import cc.sighs.extremeevasion.event.ExtremeCounterAttackEvent;
 import cc.sighs.extremeevasion.event.ExtremeEvasionTriggeredEvent;
 import cc.sighs.extremeevasion.handler.EvasionData;
+import cc.sighs.extremeevasion.handler.ProjectileData;
 import cc.sighs.extremeevasion.handler.TaCZHandler;
 import cc.sighs.extremeevasion.network.ExtremeEvasionNetwork;
 import net.minecraft.server.level.ServerPlayer;
@@ -119,12 +120,18 @@ public final class ExtremeEvasionEvents {
         if (!(rayTraceResult instanceof EntityHitResult entityHitResult)) return;
 
         var entity = entityHitResult.getEntity();
-        if (!(entity instanceof Player player) || !hasActiveExtremeEvasionWindow(player)) return;
-
         var projectile = event.getProjectile();
+        var projectileData = (ProjectileData) projectile;
+        if (entity == projectileData.extremeEvasion$getIgnoreForEntity()) {
+            event.setCanceled(true);
+            return;
+        }
+        if (!(entity instanceof ServerPlayer player) || !hasActiveExtremeEvasionWindow(player)) return;
+
         var owner = projectile.getOwner();
         var living = owner instanceof LivingEntity ? (LivingEntity) owner : null;
-        if (tryTriggerExtremeEvasion((ServerPlayer) player, projectile.damageSources().mobProjectile(projectile, living))) {
+        if (tryTriggerExtremeEvasion(player, projectile.damageSources().mobProjectile(projectile, living))) {
+            projectileData.extremeEvasion$setIgnoreForEntity(player);
             event.setCanceled(true);
         }
     }

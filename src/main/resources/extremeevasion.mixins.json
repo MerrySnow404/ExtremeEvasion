@@ -9,6 +9,7 @@
     "EpicFightDodgeSkillMixin",
     "PlayerAttackStrengthMixin",
     "PlayerDataMixin",
+    "ProjectileDataMixin",
     "ServerLevelMixin",
     "UtilMixin"
   ],
